@@ -11,6 +11,9 @@ data:
   processed_dir: ${data.dir}/processed
   simulated_dir: ${data.processed_dir}/simulated
 
+figures:
+  dir: figures
+
 chromadb:
   collection_name: ctrials
   persist_dir: ${data.raw_dir}/collections
@@ -29,8 +32,7 @@ split_params:
 prompts:
   dir: prompts
 
-synthetic_data: True
-
+open_source_model: NousResearch/Hermes-2-Pro-Mistral-7B
 
 aacr:
   clinical_sample: ${data.raw_dir}/aacr_genie/data_clinical_sample.txt
