@@ -19,6 +19,8 @@ chromadb:
 civic:
   raw_file: ${data.raw_dir}/01-Dec-2023-VariantSummaries.tsv
   processed_file: ${data.processed_dir}/civic_processed.csv
+  variant_syn_file: ${data.processed_dir}/variants_synonyms.csv
+  gene_syn_file: ${data.processed_dir}/gene_synonyms.csv
 
 split_params:
   random_state: 42
