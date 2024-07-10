@@ -158,7 +158,7 @@ def process_sv(data_sv, biomarkers_df):
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):
     # Load data
-    data_clinical_sample, data_mutations, biomarkers_list, gene_synonyms, variant_synonyms, civic_df, data_sv, data_cna = load_data(cfg.aacr.clinical_sample, cfg.aacr.data_mutations, f"{cfg.data.interim_data}/biomarkers_list.json", cfg.civic.gene_syn_file, cfg.civic.variant_syn_file, cfg.civic.processed_file, cfg.aacr.data_cna, cfg.aacr.data_sv)
+    data_clinical_sample, data_mutations, biomarkers_list, gene_synonyms, variant_synonyms, civic_df, data_sv, data_cna = load_data(cfg.aacr.clinical_sample, cfg.aacr.data_mutations, f"{cfg.data.interim_dir}/biomarkers_list.json", cfg.civic.gene_syn_file, cfg.civic.variant_syn_file, cfg.civic.processed_file, cfg.aacr.data_cna, cfg.aacr.data_sv)
 
     # Preprocess data
     data_mutations_selected = preprocess_data(data_mutations)
