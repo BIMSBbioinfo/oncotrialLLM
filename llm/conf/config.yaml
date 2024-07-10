@@ -1,0 +1,30 @@
+defaults:
+  - _self_
+
+openai:
+  api_key: ${oc.env:OPENAI_API_KEY, ""}
+
+data:
+  dir: data
+  raw_dir: ${data.dir}/raw
+  interim_dir: ${data.dir}/interim
+  processed_dir: ${data.dir}/processed
+  simulated_dir: ${data.processed_dir}/simulated
+
+chromadb:
+  collection_name: ctrials
+  persist_dir: ${data.raw_dir}/collections
+
+
+civic:
+  raw_file: ${data.raw_dir}/01-Dec-2023-VariantSummaries.tsv
+  processed_file: ${data.processed_dir}/civic_processed.csv
+
+split_params:
+  random_state: 42
+  train_percent: 70
+
+prompts:
+  dir: prompts
+
+synthetic_data: True
