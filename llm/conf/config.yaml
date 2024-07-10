@@ -10,6 +10,7 @@ data:
   interim_dir: ${data.dir}/interim
   processed_dir: ${data.dir}/processed
   simulated_dir: ${data.processed_dir}/simulated
+  results_dir: ${data.dir}/results
 
 figures:
   dir: figures
