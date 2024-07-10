@@ -11,7 +11,7 @@ from langchain.prompts.prompt import PromptTemplate
 import os
 import functools
 
-from utils.jsons import dump_json, load_json
+from utils.jsons import dump_json
 
 
 # Set OpenAI API key
