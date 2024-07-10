@@ -189,7 +189,7 @@ def main(cfg):
 
     print(f"The percentage of patients matching the biomarkers is: {percentage_matching:.2f}%")
 
-    patients_with_biomarker.to_csv("{cfg.data.processed_dir}/patient_with_biomarkers.csv", index=False)
+    patients_with_biomarker.to_csv(f"{cfg.data.processed_dir}/patient_with_biomarkers_NEW.csv", index=False)
 
 
 if __name__ == "__main__":
