@@ -92,7 +92,7 @@ Trial: {trial4}
 Trial: """
 
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="config")
+@hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):
         
     prompt_template = PromptTemplate(

@@ -25,7 +25,7 @@ import json
 from utils.jsons import load_json
 
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="config")
+@hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):
     try:
         train_dataset = load_json(f"{cfg.data.processed_dir}/ft_train.jsonl")

@@ -10,7 +10,7 @@ import json
 from utils.jsons import write_jsonl, to_jsonl, load_json, dump_json
 
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="config")
+@hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):
     # Load JSON file
     try:

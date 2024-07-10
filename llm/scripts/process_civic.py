@@ -118,7 +118,7 @@ def process_civic_data(civic, output_file):
     civic.to_csv(output_file, index=False)
 
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="config")
+@hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):
     civic = pd.read_table(cfg.civic.raw_file)
     expand_variant_aliases(civic, cfg.civic.variant_syn_file)

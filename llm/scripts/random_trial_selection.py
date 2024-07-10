@@ -86,7 +86,7 @@ def create_trials_list(ids, trials):
     return trials_list
     
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="config")
+@hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):
     # load collection
     trials = ChromaDBHandler(cfg.chromadb.persist_dir, cfg.chromadb.collection_name).collection
