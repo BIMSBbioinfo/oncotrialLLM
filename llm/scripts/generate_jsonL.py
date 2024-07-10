@@ -37,10 +37,10 @@ def main(cfg):
     # Save train and test sets to JSON files
     try:
         dump_json(data={"size": len(training_data), "ids": training_data},
-                  file_path=f"{cfg.data.interim_dir}/train_set_test.json")
+                  file_path=f"{cfg.data.interim_dir}/train_set.json")
 
         dump_json(data={"size": len(test_data), "ids": test_data},
-                  file_path=f"{cfg.data.interim_dir}/test_set_test.json")
+                  file_path=f"{cfg.data.interim_dir}/test_set.json")
     except Exception as e:
         print(f"Error saving train/test sets to JSON files: {e}")
 
