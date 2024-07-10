@@ -30,3 +30,10 @@ prompts:
   dir: prompts
 
 synthetic_data: True
+
+
+aacr:
+  clinical_sample: ${data.raw_dir}/aacr_genie/data_clinical_sample.txt
+  data_mutations: ${data.raw_dir}/aacr_genie/data_mutations_extended.txt
+  data_cna: ${data.raw_dir}/aacr_genie/data_CNA.txt
+  data_sv: ${data.raw_dir}/aacr_genie/data_sv.txt
