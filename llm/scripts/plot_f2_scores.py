@@ -82,14 +82,14 @@ def plot_dataframe(df, score_column, model_order, prompt_order, filename):
 
     ax.set_xticks([r + bar_width / 2 for r in range(len(models))])
     ax.set_xticklabels(['gpt-3.5-turbo', 'gpt-4', 'Hermes-2-Pro-\nMistral-7B',f"Hermes-2-Pro-\nMistral-7B_DPO-92",f'Hermes-2-Pro-\nMistral-7B_DPO-156'])
-    ax.set_xlabel('Models', fontsize=7)
-    ax.set_ylabel('F2 Score', fontsize=7)
+    ax.set_xlabel('Models', fontsize=8)
+    ax.set_ylabel('F2 Score', fontsize=8)
 
     # rotates labels and aligns them horizontally to left 
     plt.setp( ax.xaxis.get_majorticklabels(), rotation=-90, ha="left", rotation_mode="anchor")
-    ax.legend(fontsize=5)
-    plt.xticks(fontsize=5) 
-    plt.yticks(fontsize=5)
+    ax.legend(fontsize=6)
+    plt.xticks(fontsize=7) 
+    plt.yticks(fontsize=7)
     plt.tight_layout()
 
     plt.savefig(filename)
