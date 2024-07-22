@@ -93,5 +93,6 @@ venv-llm/
 poetry.lock
 
 logs
+outputs
 
 notebooks
