@@ -13,6 +13,8 @@ Both functions assume accuracy is represented as a float between 0 and 1,
 and the threshold is a percentage.
 """
 
+from utils.jsons import flatten_lists_in_dict
+
 
 def evaluate_predictions(predicted_output, ground_truth, entity):
     tp, tn, fp, fn = 0, 0, 0, 0
@@ -69,6 +71,19 @@ def threshold_accuracy(accuracy, threshold=50):
     threshold_met = accuracy * 100 >= threshold
     return threshold_met
 
+
+def compute_evals(response, actual):
+    # Evaluate results with DNF
+    evals_dnf_inclusion = evaluate_predictions(response, actual, 'inclusion_biomarker')
+    evals_dnf_exclusion = evaluate_predictions(response, actual, 'exclusion_biomarker')
+
+    # Evaluate results without DNF
+    flat_response = flatten_lists_in_dict(response)
+    flat_actual = flatten_lists_in_dict(actual)
+    evals_extract_incl = evaluate_predictions(flat_response, flat_actual, "inclusion_biomarker")
+    evals_extract_exl = evaluate_predictions(flat_response, flat_actual, "exclusion_biomarker")
+
+    return evals_dnf_inclusion, evals_dnf_exclusion, evals_extract_incl, evals_extract_exl
 
 def save_eval(tp, tn, fp, fn, evals):
     true_p, true_n, false_p, false_n = evals
