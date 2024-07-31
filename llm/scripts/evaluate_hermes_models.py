@@ -191,3 +191,7 @@ def main(cfg):
         existing_data["results"] = [results]
 
     dump_json(existing_data, output_file)
+
+
+if __name__ == "__main__":
+    main()
