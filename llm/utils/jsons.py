@@ -7,6 +7,17 @@ def load_json(file_path):
     return data
 
 
+def load_jsonl(file_path):
+    data = []
+    with open(file_path, 'r') as file:
+        for line in file:
+            try:
+                data.append(json.loads(line))
+            except json.JSONDecodeError as e:
+                print(f"JSONDecodeError in line: {line}\nError: {e}")
+    return data
+
+
 def dump_json(data, file_path):
     try:
         with open(file_path, 'w') as file:
