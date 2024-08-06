@@ -35,7 +35,7 @@ prompts:
 
 DPO_FT:
   open_source_model: NousResearch/Hermes-2-Pro-Mistral-7B
-  fine_tuned_model: Hermes-2-Pro-Mistral-7B-dpo_r_2_alpha_4
+  fine_tuned_model: nalkhou/Hermes-2-Pro-Mistral-7B_DPO-92
   fine_tuning_train: ${data.processed_dir}/ft_train.jsonl
   fine_tuning_test: ${data.processed_dir}/ft_test.jsonl
   beta: 0.1
@@ -54,8 +54,7 @@ LoRA:
   target_modules: ['k_proj', 'gate_proj', 'v_proj', 'up_proj', 'q_proj', 'o_proj', 'down_proj'] 
 
 EVAL:
-  open_source_ft: True # choose false if you'd like to evaluate the base model
-  open_source_model: Hermes-2-Pro-Mistral-7B-dpo_r_2_alpha_4
+  open_source_model: nalkhou/Hermes-2-Pro-Mistral-7B_DPO-92
   open_source_eval_file: Fine_tune_a_Mistral_7b_model_with_DPO_zero-shot_zero-shot_loong_r_2_alpha_4.json # Changes depending on what we are evaluating!
 
 aacr:
