@@ -18,7 +18,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from utils.jsons import (
-    load_json,
+    load_jsonl,
     dump_json,
     loads_json)
 from utils.evaluation import (
@@ -31,13 +31,12 @@ from utils.evaluation import (
 def main(cfg):
     # Load test set
     try:
-        train_dataset = load_json(cfg.DPO_FT.fine_tuning_test)
+        train_dataset = load_jsonl(cfg.DPO_FT.fine_tuning_test)
     except Exception as e:
         print(f"Loading data from HuggingFace: {e}")
         dataset = load_dataset('nalkhou/clinical-trials', split=['train', 'validation', 'test'])
         test_dataset = dataset[2]
 
-    base_model_id = cfg.EVAL.open_source_model
     output_file = cfg.EVAL.open_source_eval_file
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -45,13 +44,11 @@ def main(cfg):
         bnb_4bit_quant_type="nf4",
         bnb_4bit_compute_dtype=torch.bfloat16
     )
-    
-    base_model = AutoModelForCausalLM.from_pretrained(base_model_id, quantization_config=bnb_config, device_map="auto")
 
-    if cfg.EVAL.open_source_ft:
-        model = PeftModel.from_pretrained(base_model, f"{cfg.DPO_FT.fine_tuned_model}/checkpoint-180")
-    else:
-        model = base_model
+
+    base_model_id = cfg.EVAL.open_source_model
+
+    model = AutoModelForCausalLM.from_pretrained(base_model_id, quantization_config=bnb_config, device_map="auto")
 
     # redefine the tokenize function and tokenizer
     tokenizer = AutoTokenizer.from_pretrained(
