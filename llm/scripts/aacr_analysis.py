@@ -3,6 +3,7 @@ import hydra
 import pandas as pd
 
 import json
+import sys
 
 from modules.biomarker_handler import BiomarkerHandler 
 
@@ -25,7 +26,7 @@ def load_data(clinical_sample_file, mutations_file, biomarkers_file, gene_file, 
         return data_clinical_sample, data_mutations, biomarkers_list, gene_synonyms, variant_synonyms, civic_df, data_sv, data_cna
     except Exception as e:
         print(f"Error loading data: {e}")
-        return None
+        sys.exit(1)
 
 
 def preprocess_data(data_mutations):
