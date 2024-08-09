@@ -1,8 +1,6 @@
 defaults:
   - _self_
 
-openai:
-  api_key: ${oc.env:OPENAI_API_KEY, ""}
 
 data:
   dir: data
@@ -19,19 +17,21 @@ chromadb:
   collection_name: ctrials
   persist_dir: ${data.raw_dir}/collections
 
-
 civic:
   raw_file: ${data.raw_dir}/01-Dec-2023-VariantSummaries.tsv
   processed_file: ${data.processed_dir}/civic_processed.csv
   variant_syn_file: ${data.processed_dir}/variants_synonyms.csv
   gene_syn_file: ${data.processed_dir}/gene_synonyms.csv
 
+aacr:
+  clinical_sample: ${data.raw_dir}/aacr_genie/data_clinical_sample.txt
+  data_mutations: ${data.raw_dir}/aacr_genie/data_mutations_extended.txt
+  data_cna: ${data.raw_dir}/aacr_genie/data_CNA.txt
+  data_sv: ${data.raw_dir}/aacr_genie/data_sv.txt
+
 split_params:
   random_state: 42
   train_percent: 70
-
-prompts:
-  dir: prompts
 
 DPO_FT:
   open_source_model: NousResearch/Hermes-2-Pro-Mistral-7B
@@ -53,12 +53,26 @@ LoRA:
   lora_dropout: 0.05
   target_modules: ['k_proj', 'gate_proj', 'v_proj', 'up_proj', 'q_proj', 'o_proj', 'down_proj'] 
 
-EVAL:
+DPO_EVAL:
   open_source_model: nalkhou/Hermes-2-Pro-Mistral-7B_DPO-92
   open_source_eval_file: Fine_tune_a_Mistral_7b_model_with_DPO_zero-shot_zero-shot_loong_r_2_alpha_4.json # Changes depending on what we are evaluating!
+  fine_tuning_test: ${data.processed_dir}/ft_test.jsonl
 
-aacr:
-  clinical_sample: ${data.raw_dir}/aacr_genie/data_clinical_sample.txt
-  data_mutations: ${data.raw_dir}/aacr_genie/data_mutations_extended.txt
-  data_cna: ${data.raw_dir}/aacr_genie/data_CNA.txt
-  data_sv: ${data.raw_dir}/aacr_genie/data_sv.txt
+
+GPT_EVAL:
+  OPENAI_API_KEY: ${oc.env:OPENAI_API_KEY, ""}
+  n_shot: 0
+  model: gpt-3.5-turbo
+  OUTPUT_PROMPTS:
+    zero_shot: 0shot
+    one_shot: 1shot
+    two_shot: 2shot
+    prompt_chain: 2CoP
+  
+PROMPT_FILES:
+  gpt_zero_shot: prompts/zero-shot.json
+  gpt_one_shot: prompts/one-shot.json
+  gpt_two_shot: prompts/two-shot.json
+  gpt_chain_one: prompts/chain_1.json
+  gpt_chain_interim: prompts/chain_interim.json
+  gpt_chain_two: prompts/chain_2.json
