@@ -1,6 +1,7 @@
 defaults:
   - _self_
 
+OPENAI_API_KEY: ${oc.env:OPENAI_API_KEY, ""}
 
 data:
   dir: data
@@ -60,7 +61,6 @@ DPO_EVAL:
 
 
 GPT_EVAL:
-  OPENAI_API_KEY: ${oc.env:OPENAI_API_KEY, ""}
   n_shot: 0
   model: gpt-3.5-turbo
   OUTPUT_PROMPTS:

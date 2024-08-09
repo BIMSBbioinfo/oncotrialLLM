@@ -26,7 +26,7 @@ class GPTHandler:
         Returns:
         ChatOpenAI: A language model object.
         """
-        OPENAI_API_KEY = self.cfg.GPT_EVAL.OPENAI_API_KEY
+        OPENAI_API_KEY = self.cfg.OPENAI_API_KEY
         llm = ChatOpenAI(api_key=OPENAI_API_KEY,
                              model=model_name,
                              temperature=0)
