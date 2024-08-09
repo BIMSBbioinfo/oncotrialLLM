@@ -30,7 +30,7 @@ from utils.evaluation import (
 def main(cfg):
     # Load test set
     try:
-        test_dataset = load_jsonl(cfg.DPO_FT.fine_tuning_test)
+        test_dataset = load_jsonl(cfg.DPO_EVAL.fine_tuning_test)
     except Exception as e:
         print(f"Loading data from HuggingFace: {e}")
         dataset = load_dataset('nalkhou/clinical-trials', split=['train', 'validation', 'test'])
