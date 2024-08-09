@@ -13,11 +13,6 @@ import functools
 
 from utils.jsons import dump_json
 
-
-# Set OpenAI API key
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-model_name = "gpt-4"
-
     
 def generate_data(trial1, trial2, trial3, trial4, openai_model, prompt_template):
     chain = LLMChain(llm=openai_model, prompt=prompt_template)
@@ -94,6 +89,8 @@ Trial: """
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):
+    OPENAI_API_KEY = cfg.OPENAI_API_KEY
+    model_name = "gpt-4"
         
     prompt_template = PromptTemplate(
         input_variables=["trial1", "trial2", "trial3", "trial4"],
