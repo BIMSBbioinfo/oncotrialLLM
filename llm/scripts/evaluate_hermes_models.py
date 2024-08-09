@@ -12,7 +12,6 @@ Example:
 import re
 import hydra
 import torch
-from peft import PeftModel
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
