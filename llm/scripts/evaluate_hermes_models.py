@@ -26,7 +26,7 @@ from utils.evaluation import (
     compute_evals)
 
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="config")
+@hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):
     # Load test set
     try:
