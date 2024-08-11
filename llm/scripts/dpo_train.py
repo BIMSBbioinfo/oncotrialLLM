@@ -18,7 +18,7 @@ import hydra
 import json
 import gc
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="config")
+@hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):
     # model
     model_name = cfg.DPO_FT.open_source_model
