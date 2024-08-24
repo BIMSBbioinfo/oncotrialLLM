@@ -15,9 +15,9 @@ def parse_filename(filename):
         model = 'gpt-4'
     elif 'Fine_tune_a_Mistral_7b' in filename:
         if 'sythetic_new' in filename:
-            model = 'Hermes-2-Pro-Mistral-7B_DPO-156'
+            model = 'Hermes-FT-synth'
         else:
-            model = 'Hermes-2-Pro-Mistral-7B_DPO-92'
+            model = 'Hermes-FT'
     elif "Mistral" in filename:
         model = "Hermes-2-Pro-Mistral-7B"
     else:
@@ -81,7 +81,7 @@ def plot_dataframe(df, score_column, model_order, prompt_order, filename):
         ax.bar(bar_positions, prompt_data[score_column], bar_width / 2, alpha=0.95, label=f'{prompt}', color=colors(i))
 
     ax.set_xticks([r + bar_width / 2 for r in range(len(models))])
-    ax.set_xticklabels(['gpt-3.5-turbo', 'gpt-4', 'Hermes-2-Pro-\nMistral-7B',f"Hermes-2-Pro-\nMistral-7B_DPO-92",f'Hermes-2-Pro-\nMistral-7B_DPO-156'])
+    ax.set_xticklabels(['gpt-3.5-turbo', 'gpt-4', 'Hermes-2-Pro-\nMistral-7B',f"Hermes-FT",f'Hermes-FT-synth'])
     ax.set_xlabel('Models', fontsize=8)
     ax.set_ylabel('F2 Score', fontsize=8)
 
@@ -102,8 +102,8 @@ def main(cfg):
         'gpt-3.5-turbo',
         'gpt-4',
         'Hermes-2-Pro-Mistral-7B',
-        'Hermes-2-Pro-Mistral-7B_DPO-92',
-        'Hermes-2-Pro-Mistral-7B_DPO-156'
+        'Hermes-FT',
+        'Hermes-FT-synth'
     ]
 
     prompt_order = ['0S', 'PC', '1S', '2S']
