@@ -3547,8 +3547,7 @@
             "Exclusion DNF F2": [
                 0.06227758007117437
             ],
-            "Latency (seconds)": 322.2062430381775,
-            "tokens": 124310
+            "Latency (seconds)": 322.2062430381775
         }
     ]
 }
