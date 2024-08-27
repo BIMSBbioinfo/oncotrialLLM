@@ -1,0 +1,12 @@
+{
+    "input_variables": [
+        "input_list"
+    ],
+    "input_types": {},
+    "output_parser": null,
+    "partial_variables": {},
+    "template": "As an expert, your task is to process the provided list of biomarkers, which contains both inclusion and exclusion biomarkers, and construct a well-structured JSON output with the following format: {{\"inclusion_biomarker\": [], \"exclusion_biomarker\": []}}. Each key will contain a list of list(s) of string(s). If either the inclusion biomarkers or exclusion biomarkers list is empty, set the value of the appropriate key in the dictionary to an empty list ([]).\n\nFor each biomarker rephrase the biomarker by moving the gene name before the variant or status. Remove the cancer/tumor type or organ information from the biomarker and only keep the biomarker name. Remove the term \"gene\", \"allele\" and \"status\" from the biomarker. Ensure the variant is singular. Ensure the variant is noun-based (like changing \"translocated\" to \"translocation\"), and placed after the gene name. Insert a space between the gene name and its variant, and also between the status and the hormone name. Replace symbols \"-\" and \"+\" with \"negative\" and \"positive\", unless it's in the MSI status or known fusions separated by \"-\". If in the list \"germline\" or \"somatic\" terms are in the biomarker, place them in parentheses at the end of the biomarker. Ignore any biomarker mentioned as an \"exception\" or after \"other than\". Replace the expression \"positive expression\" with the term \"expression\". Replace \"mutant\" with \"mutation\". Correctly expand the biomarkers. Remove the term \"mutation\" from the biomarker when there's has a specific variant in the string (e.g CCND1 P287T mutation becomes CCND1 P287T). Include each biomarker only once.\n\nThe logic that connect these biomarkers is defined by the keywords 'AND' and 'OR', and you should structrue these connections as follows: When biomarkers are connected by 'AND', you should group them in the same list. When biomarkers are connected by 'OR', you should place them in separate lists. If there is only one biomarker with no 'AND' or 'OR' logic connected to it, consider it 'OR'.\n\nInput list: {input_list}\nJSON: ",
+    "template_format": "f-string",
+    "validate_template": false,
+    "_type": "prompt"
+}
