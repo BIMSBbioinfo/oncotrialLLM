@@ -51,13 +51,13 @@ def main(cfg: DictConfig):
     # selecting prompt and output filename based on n_shot
     if n_shot == 0:
         template_file = cfg.PROMPT_FILES.gpt_zero_shot
-        filename = f"{model}_{cfg.GPT_EVAL.OUTPUT_PROMPTS.zero_shot}"
+        filename = f"{model}_{cfg.GPT_EVAL.OUTPUT_PROMPTS.zero_shot}.json"
     elif n_shot == 1:
         template_file = cfg.PROMPT_FILES.gpt_one_shot
-        filename = f"{model}_{cfg.GPT_EVAL.OUTPUT_PROMPTS.one_shot}"
+        filename = f"{model}_{cfg.GPT_EVAL.OUTPUT_PROMPTS.one_shot}.json"
     else:
         template_file = cfg.PROMPT_FILES.gpt_two_shot
-        filename = f"{model}_{cfg.GPT_EVAL.OUTPUT_PROMPTS.two_shot}"
+        filename = f"{model}_{cfg.GPT_EVAL.OUTPUT_PROMPTS.two_shot}.json"
 
     try:
         # check if prompts file exists
@@ -85,7 +85,7 @@ def main(cfg: DictConfig):
     tp_ex_dnf, tn_ex_dnf, fp_ex_dnf, fn_ex_dnf = [], [], [], []
     predicted_list, actual_list, failed_prediction = [], [], []
 
-    bar = progressbar.ProgressBar(maxval=test_set['size'], widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    bar = progressbar.ProgressBar(maxval=len(test_set), widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
     bar.start()
     counter = 0
     for i in test_set['ids']:
