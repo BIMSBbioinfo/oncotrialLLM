@@ -74,5 +74,6 @@ PROMPT_FILES:
   gpt_one_shot: prompts/one-shot.json
   gpt_two_shot: prompts/two-shot.json
   gpt_chain_one: prompts/chain_1.json
-  gpt_chain_interim: prompts/chain_interim.json
   gpt_chain_two: prompts/chain_2.json
+
+
