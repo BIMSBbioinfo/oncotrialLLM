@@ -88,15 +88,14 @@ def main(cfg: DictConfig):
     bar = progressbar.ProgressBar(maxval=len(test_set), widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
     bar.start()
     counter = 0
-    for i in test_set['ids']:
+    for i in test_set:
         counter += 1
         bar.update(counter)
         try:
-            trial_id = i['trial_id']
-            logger.info(f"@ trial {trial_id}")
+            logger.info(f"@ trial {counter}")
 
             actual = i['output']
-            input_trial = i['document']
+            input_trial = i['input']
 
             if n_shot == 0:
                 response = llm_chain({'trial': input_trial})
@@ -115,11 +114,11 @@ def main(cfg: DictConfig):
             try:
                 response['text']
             except Exception as e:
-                logger.error(f"Trial {trial_id} Failed to generate text output: {e}")
+                logger.error(f"Trial {counter} Failed to generate text output: {e}")
             try:
                 response_parsed = loads_json(response['text'])
             except TypeError as e:
-                logger.error(f"Trial {trial_id} Failed to parse text output: {e}")
+                logger.error(f"Trial {counter} Failed to parse text output: {e}")
                 failed_prediction.append(response)
                 if actual == {'inclusion_biomarker': [], 'exclusion_biomarker': []}:
                     evals_dnf_inclusion = evals_dnf_exclusion = evals_extract_incl = evals_extract_exl = (0,0,1,0)
@@ -143,7 +142,7 @@ def main(cfg: DictConfig):
             save_eval(tp_ex, tn_ex, fp_ex, fn_ex, evals_extract_exl)
 
         except Exception as e:
-            logger.error(f"Trial {trial_id} Failed: {e}")
+            logger.error(f"Trial {counter} Failed: {e}")
 
     end_time = time.time()
     latency = end_time - start_time
