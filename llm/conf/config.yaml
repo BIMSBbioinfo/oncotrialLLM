@@ -2,6 +2,7 @@ defaults:
   - _self_
 
 OPENAI_API_KEY: ${oc.env:OPENAI_API_KEY, ""}
+LOG_DIR: "logs"
 
 data:
   dir: data

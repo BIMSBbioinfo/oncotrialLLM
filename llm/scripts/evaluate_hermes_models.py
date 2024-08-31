@@ -12,12 +12,16 @@ Example:
 import re
 import hydra
 import torch
+from loguru import logger
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+import os
+
 from utils.jsons import (
     load_jsonl,
+    load_json,
     dump_json,
     loads_json)
 from utils.evaluation import (
@@ -28,11 +32,18 @@ from utils.evaluation import (
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):
+    # Set up loguru
+    log_dir = cfg.LOG_DIR
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    log_filename = os.path.join(log_dir, "hermes_zero_shot_log.txt")
+    logger.add(log_filename, level="INFO", format="{time} - {name} - {level} - {message}")
+
     # Load test set
     try:
         test_dataset = load_jsonl(cfg.DPO_EVAL.fine_tuning_test)
     except Exception as e:
-        print(f"Loading data from HuggingFace: {e}")
+        logger.error(f"Loading data from HuggingFace: {e}")
         dataset = load_dataset('nalkhou/clinical-trials', split=['train', 'validation', 'test'])
         test_dataset = dataset[2]
 
@@ -99,9 +110,10 @@ def main(cfg):
                     response_parsed = eval(output_content)
                 else:
                     response_parsed = loads_json(re.sub(r'\}\}$(?!\})', '}', response.replace("'","\"")))
+                logger.info(f"Actual: {actual}\nPredicted: {response}\nParsed: {response_parsed}")
 
             except Exception as e:
-                print(f"Failed to parse the json response: {response}: {e}")
+                logger.error(f"Failed to parse the json response: {response}: {e}")
                 j = {"input": i["input"], "actual": actual, "predicted": response}
                 failed_list.append(j)
 
@@ -119,7 +131,7 @@ def main(cfg):
             predicted_list.append(response_parsed)
             actual_list.append(actual)
         except Exception as e:
-            print(f"Trial Failed: {e}")
+            logger.error(f"Trial Failed {i}:\n {e}")
             continue
 
         # Metrics

@@ -28,14 +28,20 @@ def find_trial(k, trials):
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg: DictConfig):
-    n_shot = cfg.n_shot
-    model = cfg.model
+    n_shot = cfg.GPT_EVAL.n_shot
+    model = cfg.GPT_EVAL.model
+    # Set up loguru
+    log_dir = cfg.LOG_DIR
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    log_filename = os.path.join(log_dir, f"{n_shot}_shot_{model}_log.txt")
+    logger.add(log_filename, level="INFO", format="{time} - {name} - {level} - {message}")
 
     # Load test set
     try:
         test_set = load_jsonl(cfg.DPO_FT.fine_tuning_test)
     except Exception as e:
-        print(f"Loading Test data from HuggingFace: {e}")
+        logger.error(f"Loading Test data from HuggingFace: {e}")
         dataset = load_dataset('nalkhou/clinical-trials', split=['train', 'validation', 'test'])
         test_set = dataset[2]
 
@@ -44,7 +50,7 @@ def main(cfg: DictConfig):
         try:
             train_set = load_jsonl(cfg.DPO_FT.fine_tuning_train)
         except Exception as e:
-            print(f"Loading Train data from HuggingFace: {e}")
+            logger.error(f"Loading Train data from HuggingFace: {e}")
             dataset = load_dataset('nalkhou/clinical-trials', split=['train', 'validation', 'test'])
             train_set = dataset[0]
 
@@ -111,6 +117,7 @@ def main(cfg: DictConfig):
                     response = llm_chain({'trial': input_trial, 'example': example, 'example2': example_2})
                 else:
                     response = llm_chain({'trial': input_trial, 'example': example})
+            logger.info(f"Actual: {actual} \n Response: {response}")
             try:
                 response['text']
             except Exception as e:

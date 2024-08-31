@@ -14,21 +14,14 @@ from langchain.prompts import load_prompt
 import os
 import sys
 import time
-from pathlib import Path
 
 from modules.gpt_handler import GPTHandler
-from modules.logging_handler import CustomLogger
 from utils.evaluation import compute_evals, save_eval, get_metrics
 from utils.jsons import (
     load_jsonl,
     load_json,
     dump_json,
     loads_json)
-
-def log_name(template_file, model):
-    file_name_no_extension = Path(template_file).stem
-    log_name = f"{model}_{file_name_no_extension}"
-    return log_name
 
 
 def load_prompt_file(file_path):
@@ -52,7 +45,14 @@ def main(cfg):
     prompt_1 = cfg.PROMPT_FILES.gpt_chain_one
     prompt_2 = cfg.PROMPT_FILES.gpt_chain_two
 
-    logger = CustomLogger(log_name("chain_of_prompts", model))
+    log_dir = cfg.LOG_DIR
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    log_filename = os.path.join(log_dir, f"chain_of_prompts_{model}_log.txt")
+    logger.add(log_filename, level="INFO", format="{time} - {name} - {level} - {message}")
+
+    logger.info(f"Initializing evaluation for model: {model}")
+    logger.info(f"Log file will be saved in: {log_filename}")
 
     # Load test set
     try:
@@ -69,7 +69,7 @@ def main(cfg):
         # Load the second prompt file
         second_prompt_template = load_prompt_file(prompt_2)
     except FileNotFoundError as e:
-        logger.log_error(f"Template File {e.filename} does not exist: {e}")
+        logger.error(f"Template File {e.filename} does not exist: {e}")
         sys.exit(1)
 
     try:
@@ -85,11 +85,11 @@ def main(cfg):
             prompt=second_prompt_template)
 
     except Exception as e:
-        logger.log_error(f"Failed to set up LLM chain: {e}")
+        logger.error(f"Failed to set up LLM chain: {e}")
         sys.exit(1)
 
-    logger.log_info(f"Chain 1: {first_prompt_template.template}")
-    logger.log_info(f"Chain 2: {second_prompt_template.template}")
+    logger.info(f"Chain 1: {first_prompt_template.template}")
+    logger.info(f"Chain 2: {second_prompt_template.template}")
 
     start_time = time.time()
 
@@ -107,7 +107,7 @@ def main(cfg):
         counter += 1
         bar.update(counter)
         try:
-            logger.log_info(f"@ trial {counter}")
+            logger.info(f"@ trial {counter}")
 
             actual = i['output']
             input_trial = i['input']
@@ -118,7 +118,7 @@ def main(cfg):
             try:
                 response_parsed = loads_json(response)
             except Exception as e:
-                logger.log_error(f"Trial {counter} Failed to parse JSON output: {e}")
+                logger.error(f"Trial {counter} Failed to parse JSON output: {e}")
                 failed_prediction.append(response)
                 if actual == {'inclusion_biomarker': [], 'exclusion_biomarker': []}:
                     evals_dnf_inclusion = evals_dnf_exclusion = evals_extract_incl = evals_extract_exl = (0,0,1,0)
@@ -134,8 +134,8 @@ def main(cfg):
             predicted_list.append(response_parsed)
             actual_list.append(actual)
 
-            logger.log_info(f"Predicted: {response_parsed}")
-            logger.log_info(f"Actual: {actual}")
+            logger.info(f"Predicted: {response_parsed}")
+            logger.info(f"Actual: {actual}")
 
             # Metrics
             evals_dnf_inclusion, evals_dnf_exclusion, evals_extract_incl, evals_extract_exl = compute_evals(response_parsed, actual)
@@ -144,14 +144,14 @@ def main(cfg):
             save_eval(tp_inc, tn_inc, fp_inc, fn_inc, evals_extract_incl)
             save_eval(tp_ex, tn_ex, fp_ex, fn_ex, evals_extract_exl)
 
-            logger.log_info("\n")
+            logger.info("\n")
         except Exception as e:
-            logger.log_error(f"Trial {counter} Failed: {e}")
+            logger.error(f"Trial {counter} Failed: {e}")
 
     end_time = time.time()
     latency = end_time - start_time
-    logger.log_info(f"Latency: {latency} seconds")
-    logger.log_info("\n\n\n")
+    logger.info(f"Latency: {latency} seconds")
+    logger.info("\n\n\n")
 
     # Get Precision, recall, f1 score and accuracy
     inc = get_metrics(tp=sum(tp_inc), tn=sum(tn_inc), fp=sum(fp_inc), fn=sum(fn_inc))
@@ -203,7 +203,7 @@ def main(cfg):
         # Read existing data from the file, if it exists
         existing_data = load_json(output_file)
     except FileNotFoundError:
-        logger.log_error(f"Output file {output_file} does not exist")
+        logger.error(f"Output file {output_file} does not exist")
         existing_data = {}
 
     # Append the new data to the existing results list
