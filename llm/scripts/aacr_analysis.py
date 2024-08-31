@@ -1,6 +1,7 @@
 import re
 import hydra
 import pandas as pd
+from loguru import logger
 
 import json
 import sys
@@ -10,7 +11,6 @@ from modules.biomarker_handler import BiomarkerHandler
 
 def load_data(clinical_sample_file, mutations_file, biomarkers_file, gene_file, variant_file, civic_file, cna_file, sv_file):
     try:
-        # Load data files
         data_clinical_sample = pd.read_csv(clinical_sample_file, sep="\t", comment='#')
         data_mutations = pd.read_csv(mutations_file, sep="\t")
         with open(biomarkers_file, 'r') as f:
@@ -24,95 +24,150 @@ def load_data(clinical_sample_file, mutations_file, biomarkers_file, gene_file, 
         data_sv = data_sv[['Sample_Id', 'Site1_Hugo_Symbol',
             'Site2_Hugo_Symbol', 'Event_Info', 'Site1_Description', 'Site2_Description','Class']]
         return data_clinical_sample, data_mutations, biomarkers_list, gene_synonyms, variant_synonyms, civic_df, data_sv, data_cna
+    except FileNotFoundError as e:
+        logger.error(f"Error loading data: {e.filename}")
     except Exception as e:
-        print(f"Error loading data: {e}")
+        logger.error(f"Error loading data: {e}")
         sys.exit(1)
 
-
 def preprocess_data(data_mutations):
-    data_mutations_selected = data_mutations[['Hugo_Symbol', 'Variant_Classification', 'Variant_Type',
-                                              'dbSNP_RS', 'Tumor_Sample_Barcode', 'Matched_Norm_Sample_Barcode', 'Mutation_Status',
-                                              'HGVSc', 'HGVSp', 'HGVSp_Short', 'Exon_Number']]
-    data_mutations_selected['HGVSp_Short'] = data_mutations_selected['HGVSp_Short'].str.replace('p.', '')
-    return data_mutations_selected
-
+    try:
+        data_mutations_selected = data_mutations[['Hugo_Symbol', 'Variant_Classification', 'Variant_Type',
+                                                  'dbSNP_RS', 'Tumor_Sample_Barcode', 'Matched_Norm_Sample_Barcode', 'Mutation_Status',
+                                                  'HGVSc', 'HGVSp', 'HGVSp_Short', 'Exon_Number']]
+        data_mutations_selected['HGVSp_Short'] = data_mutations_selected['HGVSp_Short'].str.replace('p.', '')
+        return data_mutations_selected
+    except KeyError as e:
+        print(f"Column not found: {e}")
+        sys.exit(1)
+    except ValueError as e:
+        print(f"Value error: {e}")
+        sys.exit(1)
 
 def map_gene_symbols(data_mutations_selected, gene_synonyms):
-    synonym_mapping = pd.melt(
-        gene_synonyms,
-        id_vars=['gene'],
-        value_vars=['symbol', 'synonym'],
-        var_name='type',
-        value_name='synonym'
-    ).drop(columns='type').dropna().drop_duplicates().reset_index(drop=True)
-    synonym_mapping = synonym_mapping[synonym_mapping['synonym'] != '']
-    synonym_mapping = synonym_mapping.set_index('synonym')['gene'].to_dict()
-    # Replace Hugo_Symbol with corresponding gene if it exists in the mapping
-    data_mutations_selected['Hugo_Symbol'] = data_mutations_selected['Hugo_Symbol'].map(synonym_mapping).fillna(data_mutations_selected['Hugo_Symbol'])
-    # drop rows where Hugo_Symbol wasn't found in the original gene list
-    data_mutations_selected = data_mutations_selected[data_mutations_selected['Hugo_Symbol'].isin(gene_synonyms['gene'].unique())].drop_duplicates().reset_index(drop=True)
-    return data_mutations_selected
-
+    try:
+        try:
+            synonym_mapping = pd.melt(
+                gene_synonyms,
+                id_vars=['gene'],
+                value_vars=['symbol', 'synonym'],
+                var_name='type',
+                value_name='synonym'
+            ).drop(columns='type').dropna().drop_duplicates().reset_index(drop=True)
+        except KeyError as e:
+            logger.error(f"Missing required columns in gene_synonyms DataFrame: {e}")
+        except ValueError as e:
+            logger.error(f"Error during melting or dropping columns: {e}")
+        try:
+            synonym_mapping = synonym_mapping[synonym_mapping['synonym'] != '']
+            synonym_mapping = synonym_mapping.set_index('synonym')['gene'].to_dict()
+            # Replace Hugo_Symbol with corresponding gene if it exists in the mapping
+            data_mutations_selected['Hugo_Symbol'] = data_mutations_selected['Hugo_Symbol'].map(synonym_mapping).fillna(data_mutations_selected['Hugo_Symbol'])
+            # Drop rows where Hugo_Symbol wasn't found in the original gene list
+            data_mutations_selected = data_mutations_selected[data_mutations_selected['Hugo_Symbol'].isin(gene_synonyms['gene'].unique())].drop_duplicates().reset_index(drop=True)
+        except KeyError as e:
+            logger.error(f"Error mapping 'Hugo_Symbol': {e}")
+        return data_mutations_selected
+    except Exception as e:
+        logger.error(f"Failed to map gene symbols: {e}")
+        sys.exit(1)
 
 def create_biomarkers_df(biomarkers_list, variant_synonyms_df, civic_df):
-    larger_biomarkers_list = BiomarkerHandler.populate_biomarkers(biomarkers_list, variant_synonyms_df, civic_df)
-    biomarkers_data = [b.split(" ", 1) for b in set(larger_biomarkers_list)]
-    biomarkers_df = pd.DataFrame(biomarkers_data, columns=['gene', 'variant'])
-    return biomarkers_df
-
+    try:
+        try:
+            larger_biomarkers_list = BiomarkerHandler.populate_biomarkers(biomarkers_list, variant_synonyms_df, civic_df)
+        except AttributeError as e:
+            logger.error(f"Error in populating biomarkers: {e}")
+            sys.exit(1)
+        except TypeError as e:
+            logger.error(f"Invalid type provided to populate_biomarkers: {e}")
+        try:
+            biomarkers_data = [b.split(" ", 1) for b in set(larger_biomarkers_list)]
+        except ValueError as e:
+            logger.error(f"Error splitting biomarker data: {e}")
+        try:
+            biomarkers_df = pd.DataFrame(biomarkers_data, columns=['gene', 'variant'])
+        except KeyError as e:
+            logger.error(f"Error creating DataFrame with specified columns: {e}")
+        return biomarkers_df
+    except Exception as e:
+        logger.error(f"Failed to create biomarkers DataFrame: {e}")
+        sys.exit(1)
 
 def filter_mutations(data_mutations_selected, biomarkers_df):
-    filtered_data_mutations = data_mutations_selected.merge(
-        biomarkers_df,
-        left_on=['Hugo_Symbol', 'HGVSp_Short'],
-        right_on=['gene', 'variant'],
-        how='inner'
-    )
-    filtered_data_mutations = filtered_data_mutations.drop(columns=['gene', 'variant'])
-    return filtered_data_mutations
-
-
-def process_cna(data_cna, biomarkers_df, gene_synonyms):
-    cna_biomarkers = biomarkers_df[biomarkers_df.variant.isin(["AMPLIFICATION", "DELETION"])]
-    cna_gene_synonyms = gene_synonyms[gene_synonyms.gene.isin(cna_biomarkers.gene)]
-    data_cna = map_gene_symbols(data_cna, cna_gene_synonyms)
-    filtered_data_cna = data_cna.merge(
-            cna_biomarkers,
-            left_on=['Hugo_Symbol'],
-            right_on=['gene'],
+    try:
+        filtered_data_mutations = data_mutations_selected.merge(
+            biomarkers_df,
+            left_on=['Hugo_Symbol', 'HGVSp_Short'],
+            right_on=['gene', 'variant'],
             how='inner'
         )
-    filtered_data_cna = filtered_data_cna.drop(columns=['gene', 'variant']).drop_duplicates().reset_index(drop=True) # the drop dups takes time, find out how to avoid it before
-    def categorize_samples(data_cna):
-        # Extract gene names and sample names
-        gene_names = data_cna['Hugo_Symbol']
-        sample_names = data_cna.columns[1:]  # Excluding the 'Hugo_Symbol' column
-        # Create a mask for amplification and deletion
-        amplification_mask = data_cna[sample_names] > 1
-        deletion_mask = data_cna[sample_names] < -1
-        # Stack the masks and filter the True values
-        amplifications = amplification_mask.stack().reset_index()
-        deletions = deletion_mask.stack().reset_index()
-        # Rename columns
-        amplifications.columns = ['Hugo_Symbol_Index', 'Sample', 'Amplified']
-        deletions.columns = ['Hugo_Symbol_Index', 'Sample', 'Deleted']
-        # Filter only rows where the condition is True
-        amplifications = amplifications[amplifications['Amplified']].drop(columns='Amplified')
-        deletions = deletions[deletions['Deleted']].drop(columns='Deleted')
-        # Map the Hugo_Symbol from the original DataFrame
-        amplifications['Hugo_Symbol'] = amplifications['Hugo_Symbol_Index'].map(gene_names)
-        deletions['Hugo_Symbol'] = deletions['Hugo_Symbol_Index'].map(gene_names)
-        # Select relevant columns and add status
-        amplifications = amplifications[['Hugo_Symbol', 'Sample']].assign(HGVSp_Short='AMPLIFICATION')
-        deletions = deletions[['Hugo_Symbol', 'Sample']].assign(HGVSp_Short='DELETION')
-        # Concatenate the results
-        results = pd.concat([amplifications, deletions]).reset_index(drop=True)
-        return results
-    results = categorize_samples(filtered_data_cna)
-    results_match = filter_mutations(results, cna_biomarkers)
-    results.rename(columns={'Sample': 'SAMPLE_ID'}, inplace=True)
-    return results_match
+        filtered_data_mutations = filtered_data_mutations.drop(columns=['gene', 'variant'])
+        return filtered_data_mutations
+    except KeyError as e:
+        logger.error(f"Failed to merge dataframe: {e}")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"Failed to filter mutations: {e}")
+        sys.exit(1)
 
+def process_cna(data_cna, biomarkers_df, gene_synonyms):
+    try:
+        cna_biomarkers = biomarkers_df[biomarkers_df.variant.isin(["AMPLIFICATION", "DELETION"])]
+        cna_gene_synonyms = gene_synonyms[gene_synonyms.gene.isin(cna_biomarkers.gene)]
+        data_cna = map_gene_symbols(data_cna, cna_gene_synonyms)
+        filtered_data_cna = data_cna.merge(
+                cna_biomarkers,
+                left_on=['Hugo_Symbol'],
+                right_on=['gene'],
+                how='inner'
+            )
+        filtered_data_cna = filtered_data_cna.drop(columns=['gene', 'variant']).drop_duplicates().reset_index(drop=True) # the drop dups takes time, find out how to avoid it before
+        def categorize_samples(data_cna):
+            try:
+                # Extract gene names and sample names
+                gene_names = data_cna['Hugo_Symbol']
+                sample_names = data_cna.columns[1:]  # Excluding the 'Hugo_Symbol' column
+                # Create a mask for amplification and deletion
+                amplification_mask = data_cna[sample_names] > 1
+                deletion_mask = data_cna[sample_names] < -1
+                # Stack the masks and filter the True values
+                amplifications = amplification_mask.stack().reset_index()
+                deletions = deletion_mask.stack().reset_index()
+                # Rename columns
+                amplifications.columns = ['Hugo_Symbol_Index', 'Sample', 'Amplified']
+                deletions.columns = ['Hugo_Symbol_Index', 'Sample', 'Deleted']
+                # Filter only rows where the condition is True
+                amplifications = amplifications[amplifications['Amplified']].drop(columns='Amplified')
+                deletions = deletions[deletions['Deleted']].drop(columns='Deleted')
+                # Map the Hugo_Symbol from the original DataFrame
+                amplifications['Hugo_Symbol'] = amplifications['Hugo_Symbol_Index'].map(gene_names)
+                deletions['Hugo_Symbol'] = deletions['Hugo_Symbol_Index'].map(gene_names)
+                # Select relevant columns and add status
+                amplifications = amplifications[['Hugo_Symbol', 'Sample']].assign(HGVSp_Short='AMPLIFICATION')
+                deletions = deletions[['Hugo_Symbol', 'Sample']].assign(HGVSp_Short='DELETION')
+                # Concatenate the results
+                results = pd.concat([amplifications, deletions]).reset_index(drop=True)
+                return results
+            except KeyError:
+                    raise
+            except ValueError:
+                    raise
+            except Exception:
+                    raise
+        results = categorize_samples(filtered_data_cna)
+        results_match = filter_mutations(results, cna_biomarkers)
+        results.rename(columns={'Sample': 'SAMPLE_ID'}, inplace=True)
+        return results_match
+    except KeyError as e:
+        logger.error(f"Key error in process_cna: {e}")
+        sys.exit(1)
+    except ValueError as e:
+        logger.error(f"Value error in process_cna: {e}")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"Unexpected error in process_cna: {e}")
+        sys.exit(1)
 
 def process_sv(data_sv, biomarkers_df):
     def is_categorical_mutation(description):
@@ -123,38 +178,46 @@ def process_sv(data_sv, biomarkers_df):
         return None
     matches_sv = []
     # Iterate through each biomarker in the biomarkers_df
-    for _, row in biomarkers_df.iterrows():
-        gene = row['gene'].upper()
-        variant = row['variant'].upper()
-        category = is_categorical_mutation(variant)
-        # Find matching rows in data_sv
-        matching_rows = data_sv.loc[(data_sv['Site1_Hugo_Symbol'] == gene) | (data_sv['Site1_Hugo_Symbol'] == gene)]
-        if category:
-            # If it is a categorical mutation, check against the Class column
-            matched_sv = matching_rows.loc[(matching_rows['Class'].str.upper() == category) & (matching_rows['Site2_Hugo_Symbol'].isna())]
-        else:
-            # Split variant by either '-' or '::'
-            variant_parts = re.split(r'(-|::)', variant)
-            if len(variant_parts) == 3:
-                # If the variant consists of exactly two parts (fusion), match both parts in Site1 and Site2
-                gene1, sep, gene2 = variant_parts
-                matched_sv = matching_rows[((matching_rows['Site1_Hugo_Symbol'].str.upper() == gene1) & 
-                                            (matching_rows['Site2_Hugo_Symbol'].str.upper() == gene2))]
+    try:
+        for _, row in biomarkers_df.iterrows():
+            gene = row['gene'].upper()
+            variant = row['variant'].upper()
+            category = is_categorical_mutation(variant)
+            # Find matching rows in data_sv
+            matching_rows = data_sv.loc[(data_sv['Site1_Hugo_Symbol'] == gene) | (data_sv['Site1_Hugo_Symbol'] == gene)]
+            if category:
+                # If it is a categorical mutation, check against the Class column
+                matched_sv = matching_rows.loc[(matching_rows['Class'].str.upper() == category) & (matching_rows['Site2_Hugo_Symbol'].isna())]
             else:
-                continue
-     # Append matches to the results list
-        for _, match in matched_sv.iterrows():
-            matches_sv.append({
-                'SAMPLE_ID': match['Sample_Id'],
-                "gene": gene,
-                "var": variant,
-                "Site1_Hugo_Symbol": match["Site1_Hugo_Symbol"],
-                "Site2_Hugo_Symbol": match["Site2_Hugo_Symbol"],
-                'Match_Type': match['Class'],
-                'SV_Detail': match['Event_Info']
-            })
-    return pd.DataFrame(matches_sv)
-
+                # Split variant by either '-' or '::'
+                variant_parts = re.split(r'(-|::)', variant)
+                if len(variant_parts) == 3:
+                    # If the variant consists of exactly two parts (fusion), match both parts in Site1 and Site2
+                    gene1, sep, gene2 = variant_parts
+                    matched_sv = matching_rows[((matching_rows['Site1_Hugo_Symbol'].str.upper() == gene1) & 
+                                                (matching_rows['Site2_Hugo_Symbol'].str.upper() == gene2))]
+                else:
+                    continue
+        # Append matches to the results list
+            for _, match in matched_sv.iterrows():
+                matches_sv.append({
+                    'SAMPLE_ID': match['Sample_Id'],
+                    "gene": gene,
+                    "var": variant,
+                    "Site1_Hugo_Symbol": match["Site1_Hugo_Symbol"],
+                    "Site2_Hugo_Symbol": match["Site2_Hugo_Symbol"],
+                    'Match_Type': match['Class'],
+                    'SV_Detail': match['Event_Info']
+                })
+        return pd.DataFrame(matches_sv)
+    except KeyError as e:
+        logger.error(f"Error processing SV data: {e}")
+        sys.exit(1)
+    except ValueError as e:
+        logger.error(f"Value error while processing SV: {e}")
+        sys.exit(1)
+    except Exception as e:
+        logger.error("Unexpected Error processing SV data: {e}")
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):

@@ -12,11 +12,19 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments,
 from peft import LoraConfig, PeftModel
 from datasets import Dataset
 from trl import DPOTrainer
+from loguru import logger
 import torch
 import hydra
 
 import json
+import sys
 import gc
+
+system_prompt = f"""<|im_start|>system\nYou are a helpful assistant that extracts only genomic biomarkers from the supplied clinical trial data and responds in JSON format. Here's the json schema you must adhere to:<schema>{{\"inclusion_biomarker\": [[]], \"exclusion_biomarker\": [[]]}}</schema>\nIn this context, limit the extraction of genomic biomarkers to the following categories: gene alteration (mutation, fusion, rearrangement, copy number alteration, deletion, insertion, translocation), pathway alterations, gene expression, protein expression, pathway expression, HLA, TMB (tumor molecular burden, TMB-H or TMB-L), MSI (microsatellite instability, MSI-H, MSI-L, MSS, microsatellite stable) status, gene pathway alteration like dMMR (deficient Mismatch Repair Pathway) or pMMR (proficient Mismatch Repair), and protein status (HER2, ER, PgR, PD-L1).\n\nDo not extract non-genomic biomarkers, which refer to any indicators not directly related to genetic or genomic information. Ignore information such as age, medical conditions, potential pregnancy, disease stage, allergies, treatment history, drugs, therapies, treatment, histology, and tumor cancer types, diseases, HIV, infections, and more. Also, ignore information about levels, scores, doses, expression ratios, and illnesses. Do not consider biomarkers related to model experimental animals, historical data, or previous studies.\n\nPreserve logical connections (AND, OR) between genomic biomarkers. Group 'AND'-linked genomic biomarkers in the same list, and place 'OR'-linked genomic biomarkers in separate lists. Treat main bullets in \"Inclusion Criteria\" as AND logic, and \"Exclusion Criteria\" as OR logic, unless specified otherwise. Handle ambiguous logic in the sentence as OR.\n\nEnsure each genomic biomarker is a string with the gene name preceding the variant. Remove the words \"gene\", \"allele\", \"status\", and \"mutation\" (when a specific variant is given). Make the variant singular and noun-based. Replace \"mutant\" with \"mutation\". Include a space between the gene name, its variant if they are connected. Include a space between the hormone name and its status if they are connected. Replace \"positive expression\" with \"expression\" and symbols \"-\" and \"+\" with \"negative\" and \"positive\" respectively, except in MSI status or known fusions separated by \"-\". Add \"germline\" or \"somatic\" terms in parentheses at the end of the corresponding biomarker. Ignore biomarkers mentioned as \"exceptions\" or after \"other than\". Handle synonyms in parentheses by extracting the genomic biomarker but ignoring the synonym. Extract each genomic biomarker once. Expand the genomic biomarkers when needed.\n\nTo summarize, extract only genomic biomarkers from the supplied clinical trial data, focusing on the categories mentioned above. Ignore any non-genomic biomarkers and unrelated information such as age, medical conditions, treatment history, cancer, drugs, therapies, histology, levels and scores. If no genomic biomarkers are found, return empty lists in JSON. Do not make assumptions or add biomarkers. Do not add any biomarkers that are not explicitly mentioned in the input, and do not make assumptions about potential genomic biomarkers. Ensure output list contains only lists of strings when there exist genomic biomarkers in the input, following this example: {{\"inclusion_biomarker\": [[\"GeneA variantA\"], [\"GeneX variantY]], \"exclusion_biomarker\": []}}. Do not \\escape. Do not repeat a genomic biomarker.<|im_end|>\n"""
+
+user = f"""<|im_start|>user\nExtract the genomic biomarker from the clinical trial below. Just generate the JSON object without explanation."""
+
+user_end = f"""\n<|im_end|>\n<|im_start|>assistant"""
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):
@@ -24,22 +32,34 @@ def main(cfg):
     model_name = cfg.DPO_FT.open_source_model
     new_model = cfg.DPO_FT.fine_tuned_model
 
-    # read jsonl file
-    with open(cfg.DPO_FT.fine_tuning_train, 'r') as file:
-        data = [json.loads(line) for line in file]
+    try:
+        # Read jsonl file
+        with open(cfg.DPO_FT.fine_tuning_train, 'r') as file:
+            data = [json.loads(line) for line in file]
 
-    system_prompt = f"""<|im_start|>system\nYou are a helpful assistant that extracts only genomic biomarkers from the supplied clinical trial data and responds in JSON format. Here's the json schema you must adhere to:<schema>{{\"inclusion_biomarker\": [[]], \"exclusion_biomarker\": [[]]}}</schema>\nIn this context, limit the extraction of genomic biomarkers to the following categories: gene alteration (mutation, fusion, rearrangement, copy number alteration, deletion, insertion, translocation), pathway alterations, gene expression, protein expression, pathway expression, HLA, TMB (tumor molecular burden, TMB-H or TMB-L), MSI (microsatellite instability, MSI-H, MSI-L, MSS, microsatellite stable) status, gene pathway alteration like dMMR (deficient Mismatch Repair Pathway) or pMMR (proficient Mismatch Repair), and protein status (HER2, ER, PgR, PD-L1).\n\nDo not extract non-genomic biomarkers, which refer to any indicators not directly related to genetic or genomic information. Ignore information such as age, medical conditions, potential pregnancy, disease stage, allergies, treatment history, drugs, therapies, treatment, histology, and tumor cancer types, diseases, HIV, infections, and more. Also, ignore information about levels, scores, doses, expression ratios, and illnesses. Do not consider biomarkers related to model experimental animals, historical data, or previous studies.\n\nPreserve logical connections (AND, OR) between genomic biomarkers. Group 'AND'-linked genomic biomarkers in the same list, and place 'OR'-linked genomic biomarkers in separate lists. Treat main bullets in \"Inclusion Criteria\" as AND logic, and \"Exclusion Criteria\" as OR logic, unless specified otherwise. Handle ambiguous logic in the sentence as OR.\n\nEnsure each genomic biomarker is a string with the gene name preceding the variant. Remove the words \"gene\", \"allele\", \"status\", and \"mutation\" (when a specific variant is given). Make the variant singular and noun-based. Replace \"mutant\" with \"mutation\". Include a space between the gene name, its variant if they are connected. Include a space between the hormone name and its status if they are connected. Replace \"positive expression\" with \"expression\" and symbols \"-\" and \"+\" with \"negative\" and \"positive\" respectively, except in MSI status or known fusions separated by \"-\". Add \"germline\" or \"somatic\" terms in parentheses at the end of the corresponding biomarker. Ignore biomarkers mentioned as \"exceptions\" or after \"other than\". Handle synonyms in parentheses by extracting the genomic biomarker but ignoring the synonym. Extract each genomic biomarker once. Expand the genomic biomarkers when needed.\n\nTo summarize, extract only genomic biomarkers from the supplied clinical trial data, focusing on the categories mentioned above. Ignore any non-genomic biomarkers and unrelated information such as age, medical conditions, treatment history, cancer, drugs, therapies, histology, levels and scores. If no genomic biomarkers are found, return empty lists in JSON. Do not make assumptions or add biomarkers. Do not add any biomarkers that are not explicitly mentioned in the input, and do not make assumptions about potential genomic biomarkers. Ensure output list contains only lists of strings when there exist genomic biomarkers in the input, following this example: {{\"inclusion_biomarker\": [[\"GeneA variantA\"], [\"GeneX variantY]], \"exclusion_biomarker\": []}}. Do not \\escape. Do not repeat a genomic biomarker.<|im_end|>\n"""
+        data_set_new = {"prompt": [], "chosen": [], "rejected": []}
+        for da in data:
+            # Check for required keys
+            required_keys = ["input", "output", "rejected"]
+            for key in required_keys:
+                if key not in da:
+                    raise KeyError(f"Missing key '{key}' in data item: {da}")
 
-    user = f"""<|im_start|>user\nExtract the genomic biomarker from the clinical trial below. Just generate the JSON object without explanation."""
-
-    user_end = f"""\n<|im_end|>\n<|im_start|>assistant"""
-
-    data_set_new = {"prompt": [], "chosen": [], "rejected": []}
-    for da in data:
-        data_set_new["prompt"].append(system_prompt + user + da["input"] + user_end)
-        data_set_new["chosen"].append(str(da["output"]))
-        data_set_new["rejected"].append(da["rejected"])
-
+            data_set_new["prompt"].append(system_prompt + user + da["input"] + user_end)
+            data_set_new["chosen"].append(str(da["output"]))
+            data_set_new["rejected"].append(da["rejected"])
+    except KeyError as e:
+        logger.errror(f"KeyError: {e}")
+        sys.exit(1)
+    except FileNotFoundError:
+        logger.error(f"Error: The file {cfg.DPO_FT.fine_tuning_train} was not found.")
+        sys.exit(1)
+    except IOError:
+        logger.error(f"Error: An I/O error occurred while accessing the file {cfg.DPO_FT.fine_tuning_train}.")
+        sys.exit(1)
+    except json.JSONDecodeError:
+        logger.error("Error: Failed to decode JSON. Please check the file's contents.")
+        sys.exit(1)
     # Convert data to Hugging Face dataset
     dataset = Dataset.from_dict(data_set_new)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -92,11 +112,14 @@ def main(cfg):
         max_length=cfg.DPO_FT.max_length,
     )
 
-    # Fine-tune model with DPO
-    dpo_trainer.train()
-    # Save artifacts
-    dpo_trainer.model.save_pretrained("final_checkpoint")
-    tokenizer.save_pretrained("final_checkpoint")
+    try:
+        # Fine-tune model with DPO
+        dpo_trainer.train()
+        # Save artifacts
+        dpo_trainer.model.save_pretrained("final_checkpoint")
+        tokenizer.save_pretrained("final_checkpoint")
+    except Exception as e:
+        logger.error(f"Failed to save DPO trainer/tokenizer: {e}")
 
     # Flush memory
     del dpo_trainer, model
@@ -110,14 +133,19 @@ def main(cfg):
         torch_dtype=torch.float16,
     )
     tokenizer = AutoTokenizer.from_pretrained(model_name)
+    try:
+        # Merge base model with the adapter
+        model = PeftModel.from_pretrained(base_model, "final_checkpoint")
+        model = model.merge_and_unload()
+    except Exception as e:
+        logger.error(f"Failed to merge with the adapter: {e}")
 
-    # Merge base model with the adapter
-    model = PeftModel.from_pretrained(base_model, "final_checkpoint")
-    model = model.merge_and_unload()
-
-    # Save model and tokenizer
-    model.save_pretrained(new_model)
-    tokenizer.save_pretrained(new_model)
+    try:
+        # Save model and tokenizer
+        model.save_pretrained(new_model)
+        tokenizer.save_pretrained(new_model)
+    except Exception as e:
+        logger.error(f"Failed to save pretrained model: {e}")
 
 
 if __name__ == "__main__":

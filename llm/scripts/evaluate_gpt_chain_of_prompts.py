@@ -7,6 +7,7 @@ Description:
 
 import hydra
 import progressbar
+from loguru import logger
 from datasets import load_dataset
 from langchain.prompts import load_prompt
 
@@ -57,7 +58,7 @@ def main(cfg):
     try:
         test_set = load_jsonl(cfg.DPO_FT.fine_tuning_test)
     except Exception as e:
-        print(f"Loading Test data from HuggingFace: {e}")
+        logger.error(f"Loading Test data from HuggingFace: {e}")
         dataset = load_dataset('nalkhou/clinical-trials', split=['train', 'validation', 'test'])
         test_set = dataset[2]
 

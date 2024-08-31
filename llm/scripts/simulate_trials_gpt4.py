@@ -3,12 +3,14 @@ This script is designed to generate simulated clinical trial data based on provi
 """
 
 import hydra
+from loguru import logger
 from langchain.chains import LLMChain
 from langchain.prompts import load_prompt
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts.prompt import PromptTemplate
 
 import os
+import sys
 import functools
 
 from utils.jsons import dump_json
@@ -108,14 +110,21 @@ def main(cfg):
                                 temperature=0,
                                 model=model_name)
 
+    try:
     # Prompt used to predict the biomarkers JSON for the Trial (zero-shot)
-    inference_prompt = load_prompt(os.path.join(cfg.prompts.dir, "zero-shot.json"))
+        inference_prompt = load_prompt(os.path.join(cfg.prompts.dir, "zero-shot.json"))
+    except Exception as e:
+        logger.error(f"Failed to load the prompt: {e}")
+        sys.exit(1)
 
     # Initialize list to store simulated data
     simulated_data = []
 
     # Generate simulated data
     for i in range(20):
-        simulated_data += generate_simulated_data(trial1, trial2, trial3, trial4, inference_prompt, inf_openai_model, openai_model, prompt_template)
+        try:
+            simulated_data += generate_simulated_data(trial1, trial2, trial3, trial4, inference_prompt, inf_openai_model, openai_model, prompt_template)
+        except Exception as e:
+            logger.error(f"Failed to simulate data for index {i}: {e}")
 
         dump_json(simulated_data, os.path.join(cfg.data.raw_dir, "gpt4_simulated_trials.json"))

@@ -5,8 +5,10 @@ and saves the trial Id and Document returned for training and testing purposes.
 """
 import hydra
 import pandas as pd
+from loguru import logger
 
 import random
+import sys
 
 from utils.jsons import dump_json
 from modules.chromadb_handler import ChromaDBHandler
@@ -25,8 +27,11 @@ def get_civic_biomarkers(civic):
         - numpy.ndarray: An array of unique biomarkers formed by concatenating
         gene and variant columns.
     """
-    civic['biomarkers'] = civic['gene'] + " " + civic['variant']
-    return civic['biomarkers'].unique()
+    try:
+        civic['biomarkers'] = civic['gene'] + " " + civic['variant']
+        return civic['biomarkers'].unique()
+    except KeyError as e:
+        logger.error(f"Keyerror in civic data: {e}")
 
 
 def get_random_nums(seed, input_size, output_size):
@@ -61,17 +66,25 @@ def generate_random_data(civic_path, trials, size=500, seed=42):
         The dictionary has keys 'ids' and 'documents', where 'ids' is a list of document IDs,
         and 'documents' is a list of corresponding document content.
     """
+    try:
     # Get civic biomarkers list
-    civic = pd.read_csv(civic_path)
+        civic = pd.read_csv(civic_path)
+    except FileNotFoundError as e:
+        logger.error(f"Failed to read file: {e.filename}")
+        sys.exit(1)
     biomarkers = get_civic_biomarkers(civic)
     # Generate the random biomarkers list
     random_numbers = get_random_nums(seed, len(biomarkers), size)
-    selected_biomarkers = biomarkers[random_numbers]
-    results = trials.query(query_texts=selected_biomarkers,
-                           n_results=1,
-                           include=['documents'])  # return example {'ids': [['NCT04489433']], 'embeddings': None, 'documents': None, 'metadatas': None, 'distances': None}
-
-    return results, selected_biomarkers
+    try:
+        selected_biomarkers = biomarkers[random_numbers]
+        results = trials.query(query_texts=selected_biomarkers,
+                            n_results=1,
+                            include=['documents'])  # return example {'ids': [['NCT04489433']], 'embeddings': None, 'documents': None, 'metadatas': None, 'distances': None}
+        return results, selected_biomarkers
+    except IndexError as e:
+        logger.error(f"Index Error: {e}")
+    except Exception as e:
+        logger.error(f"Failed to randomly select trials: {e}")
 
 def create_trials_list(ids, trials):
     trials_list = []
@@ -88,21 +101,24 @@ def create_trials_list(ids, trials):
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):
-    # load collection
-    trials = ChromaDBHandler(cfg.chromadb.persist_dir, cfg.chromadb.collection_name).collection
-    
-    results, biomarkers = generate_random_data(cfg.civic.processed_file, trials)
-    unique_ids = list(set([id_val[0] for id_val in results['ids']]))   # example ['NCT05252403', 'NCT05435248', 'NCT04374877']
+    try:
+        # load collection
+        trials = ChromaDBHandler(cfg.chromadb.persist_dir, cfg.chromadb.collection_name).collection
+        
+        results, biomarkers = generate_random_data(cfg.civic.processed_file, trials)
+        unique_ids = list(set([id_val[0] for id_val in results['ids']]))   # example ['NCT05252403', 'NCT05435248', 'NCT04374877']
 
-    results = create_trials_list(unique_ids, trials)
+        results = create_trials_list(unique_ids, trials)
 
-    dump_json(data={
-        "size": len(unique_ids), 
-        "trials": results},
-              file_path=f"{cfg.data.interim_dir}/random_trials_500_42.json")
-    
-    dump_json(data={"size": len(biomarkers), "biomarkers": list(biomarkers)},
-            file_path=f"{cfg.data.interim_dir}/biomarkers_list.json")
+        dump_json(data={
+            "size": len(unique_ids), 
+            "trials": results},
+                file_path=f"{cfg.data.interim_dir}/random_trials_500_42.json")
+        
+        dump_json(data={"size": len(biomarkers), "biomarkers": list(biomarkers)},
+                file_path=f"{cfg.data.interim_dir}/biomarkers_list.json")
+    except Exception as e:
+        logger.error(f"Failed to select raandom trials: {e}")
 
 
 if __name__ == "__main__":

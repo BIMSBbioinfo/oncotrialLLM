@@ -15,6 +15,7 @@ Example:
 
 import hydra
 import torch
+from loguru import logger
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
@@ -30,11 +31,11 @@ def main(cfg):
     try:
         train_dataset = load_json(f"{cfg.data.processed_dir}/ft_train.jsonl")
     except Exception as e:
-        print(f"Loading data from HuggingFace: {e}")
+        logger.error(f"Loading data from HuggingFace: {e}")
         dataset = load_dataset('nalkhou/clinical-trials', split=['train', 'validation', 'test'])
         train_dataset = dataset[0]
 
-    print("Datasets Loaded")
+    logger.info("Datasets Loaded")
 
     base_model_id = "NousResearch/Hermes-2-Pro-Mistral-7B"
 
@@ -66,25 +67,33 @@ def main(cfg):
 
 
     def tokenize(prompt):
-        result = tokenizer(
-            prompt,
-            max_length=max_length,
-            return_tensors="pt",
-        )
-        result["labels"] = result["input_ids"]
-        return result
+        try:
+            result = tokenizer(
+                prompt,
+                max_length=max_length,
+                return_tensors="pt",
+            )
+            result["labels"] = result["input_ids"]
+            return result
+        except Exception as e:
+            logger.error(f"Failed to tokenize: {e}")
 
-
-    tokenized_train_dataset = train_dataset.map(generate_and_tokenize_prompt)
+    try:
+        tokenized_train_dataset = train_dataset.map(generate_and_tokenize_prompt)
+    except Exception as e:
+        logger.error(f"Failed to map training dataset: {e}")
 
     model.eval()
     negative = {}
     for train_data in tokenized_train_dataset:
-        with torch.no_grad():
-            negative['input'] = train_data['input']
-            negative['output'] = train_data['output']
-            model_output = model.generate(torch.tensor(train_data["input_ids"]), temperature=0, do_sample=False, max_new_tokens=500,)
-            negative['rejected'] = tokenizer.decode(model_output[0], skip_special_tokens=True, clean_up_tokenization_spaces=True).split("|im_start|> assistant \n")[-1]
+        try:
+            with torch.no_grad():
+                negative['input'] = train_data['input']
+                negative['output'] = train_data['output']
+                model_output = model.generate(torch.tensor(train_data["input_ids"]), temperature=0, do_sample=False, max_new_tokens=500,)
+                negative['rejected'] = tokenizer.decode(model_output[0], skip_special_tokens=True, clean_up_tokenization_spaces=True).split("|im_start|> assistant \n")[-1]
+        except Exception as e:
+            logger.error(f"Failed to generate negative for sample {train_data} \n {e}")
 
             # Check if the file exists
             if not os.path.exists(f'{cfg.data.processed}/negative.jsonl'):
