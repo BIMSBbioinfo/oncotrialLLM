@@ -9,7 +9,7 @@ data:
   raw_dir: ${data.dir}/raw
   interim_dir: ${data.dir}/interim
   processed_dir: ${data.dir}/processed
-  simulated_dir: ${data.dir}/processed/simulated
+  simulated_dir: ${data.dir}/simulated
   results_dir: ${data.dir}/results
 
 figures:
