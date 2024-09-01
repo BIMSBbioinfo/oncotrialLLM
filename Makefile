@@ -6,6 +6,6 @@ venv-llm:
 		pip install --upgrade pip && \
 		pip install poetry
 
-install-llm: venv-llm
+install-env: venv-llm
 	source venv-llm/bin/activate && \
 		poetry install
