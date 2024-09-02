@@ -32,6 +32,7 @@ from utils.evaluation import (
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):
+    print( f"{cfg.HuggingFace}/{cfg.DPO_EVAL.open_source_model}")
     # Set up loguru
     log_dir = cfg.LOG_DIR
     if not os.path.exists(log_dir):
@@ -41,13 +42,13 @@ def main(cfg):
 
     # Load test set
     try:
-        test_dataset = load_jsonl(cfg.DPO_EVAL.fine_tuning_test)
+        test_dataset = load_jsonl(cfg.DPO_EVAL.test_set)
     except Exception as e:
         logger.error(f"Loading data from HuggingFace: {e}")
-        dataset = load_dataset('nalkhou/clinical-trials', split=['train', 'validation', 'test'])
+        dataset = load_dataset(f'{cfg.HuggingFace}/manual_annotated_data', split=['train', 'validation', 'test'])
         test_dataset = dataset[2]
 
-    output_file = cfg.EVAL.open_source_eval_file
+    output_file = cfg.DPO_EVAL.open_source_eval_file
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_use_double_quant=True,
@@ -55,8 +56,11 @@ def main(cfg):
         bnb_4bit_compute_dtype=torch.bfloat16
     )
 
-
-    base_model_id = cfg.EVAL.open_source_model
+    if os.path.exists(cfg.DPO_EVAL.open_source_model):
+        base_model_id = cfg.DPO_EVAL.open_source_model
+    else:
+        base_model_id = f"{cfg.HuggingFace}/{cfg.DPO_EVAL.open_source_model}"
+        logger.warning(f"Model not found in local directory. Falling back to: {base_model_id}")
 
     model = AutoModelForCausalLM.from_pretrained(base_model_id, quantization_config=bnb_config, device_map="auto")
 

@@ -29,15 +29,20 @@ from utils.jsons import load_json
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):
     try:
-        train_dataset = load_json(f"{cfg.data.processed_dir}/ft_train.jsonl")
+        train_dataset = load_json(f"{cfg.DPO_negatives.train_set}")
     except Exception as e:
         logger.error(f"Loading data from HuggingFace: {e}")
-        dataset = load_dataset('nalkhou/clinical-trials', split=['train', 'validation', 'test'])
+        model = cfg.DPO_negatives.fine_tuning
+        if model == "Hermes-FT":
+            data = "manual_annotated_data"
+        else:
+            data = "synth-data"
+        dataset = load_dataset(f'{cfg.HuggingFace}/{data}', split=['train', 'validation', 'test'])
         train_dataset = dataset[0]
 
     logger.info("Datasets Loaded")
 
-    base_model_id = "NousResearch/Hermes-2-Pro-Mistral-7B"
+    base_model_id = cfg.DPO_negatives.open_source_model
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,

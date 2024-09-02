@@ -39,19 +39,19 @@ def main(cfg: DictConfig):
 
     # Load test set
     try:
-        test_set = load_jsonl(cfg.DPO_FT.fine_tuning_test)
+        test_set = load_jsonl(cfg.GPT_EVAL.test_set)
     except Exception as e:
         logger.error(f"Loading Test data from HuggingFace: {e}")
-        dataset = load_dataset('nalkhou/clinical-trials', split=['train', 'validation', 'test'])
+        dataset = load_dataset(f'{cfg.HuggingFace}/manual_annotated_data', split=['train', 'validation', 'test'])
         test_set = dataset[2]
 
     # Load train set for few-shot
     if n_shot > 0:
         try:
-            train_set = load_jsonl(cfg.DPO_FT.fine_tuning_train)
+            train_set = load_jsonl(cfg.GPT_EVAL.train_set)
         except Exception as e:
             logger.error(f"Loading Train data from HuggingFace: {e}")
-            dataset = load_dataset('nalkhou/clinical-trials', split=['train', 'validation', 'test'])
+            dataset = load_dataset(f'{cfg.HuggingFace}/manual_annotated_data', split=['train', 'validation', 'test'])
             train_set = dataset[0]
 
     # selecting prompt and output filename based on n_shot

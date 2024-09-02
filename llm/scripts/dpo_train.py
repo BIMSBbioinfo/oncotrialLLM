@@ -10,7 +10,7 @@ Ensure that the specified pre-trained model and tokenizer are available and comp
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, BitsAndBytesConfig
 from peft import LoraConfig, PeftModel
-from datasets import Dataset
+from datasets import load_dataset, Dataset
 from trl import DPOTrainer
 from loguru import logger
 import torch
@@ -34,9 +34,21 @@ def main(cfg):
 
     try:
         # Read jsonl file
-        with open(cfg.DPO_FT.fine_tuning_train, 'r') as file:
+        with open(cfg.DPO_FT.train_set, 'r') as file:
             data = [json.loads(line) for line in file]
+        logger.info(f"Successfully loaded data from {cfg.DPO_FT.train_set}")
+    except FileNotFoundError:
+        logger.error(f"Error: The file {cfg.DPO_FT.train_set} was not found. Loading from {cfg.HuggingFace}/{new_model}-data")
+        dataset = load_dataset(f'{cfg.HuggingFace}/{new_model}-data')
+        data = dataset["train"]
+    except IOError:
+        logger.error(f"Error: An I/O error occurred while accessing the file {cfg.DPO_FT.train_set}.")
+        sys.exit(1)
+    except json.JSONDecodeError:
+        logger.error("Error: Failed to decode JSON. Please check the file's contents.")
+        sys.exit(1)
 
+    try:
         data_set_new = {"prompt": [], "chosen": [], "rejected": []}
         for da in data:
             # Check for required keys
@@ -44,22 +56,13 @@ def main(cfg):
             for key in required_keys:
                 if key not in da:
                     raise KeyError(f"Missing key '{key}' in data item: {da}")
-
             data_set_new["prompt"].append(system_prompt + user + da["input"] + user_end)
             data_set_new["chosen"].append(str(da["output"]))
             data_set_new["rejected"].append(da["rejected"])
     except KeyError as e:
         logger.errror(f"KeyError: {e}")
         sys.exit(1)
-    except FileNotFoundError:
-        logger.error(f"Error: The file {cfg.DPO_FT.fine_tuning_train} was not found.")
-        sys.exit(1)
-    except IOError:
-        logger.error(f"Error: An I/O error occurred while accessing the file {cfg.DPO_FT.fine_tuning_train}.")
-        sys.exit(1)
-    except json.JSONDecodeError:
-        logger.error("Error: Failed to decode JSON. Please check the file's contents.")
-        sys.exit(1)
+
     # Convert data to Hugging Face dataset
     dataset = Dataset.from_dict(data_set_new)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
