@@ -18,9 +18,9 @@ Clinical trials are an essential component of drug development for new cancer tr
 
 2. The reviewed synthetic clinical trial samples can be found [here](llm/data/processed/gpt4_simulated_data.json).
 
-3. The training data used for fine-tuning Hermes-FT can be found here.
+3. The training data used for fine-tuning Hermes-FT can be found [here](llm/data/processed/negative.jsonl).
 
-4. The training data used for fine-tuning Hermes-synth-FT can be found in [results](llm/data/processed/simulated/negative_training.jsonl).
+4. The training data used for fine-tuning Hermes-synth-FT can be found in [results](llm/data/processed/simulated/negative.jsonl).
 </details>
 
 <details>
