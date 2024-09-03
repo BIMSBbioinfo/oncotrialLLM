@@ -14,7 +14,7 @@ Clinical trials are an essential component of drug development for new cancer tr
 <details> 
 <summary>Raw Clinical Trials</summary>
 
-1. The clinical trials selected previously to this project from [clinicaltrials.gov](https://clinicaltrials.gov/) can be found [here](llm/data/raw/random_trials.json)
+1. The randomly selected clinical trials from previously filtered data for this project from [clinicaltrials.gov](https://clinicaltrials.gov/) can be found [here](llm/data/raw/random_trials.json)
 
 2. The manually annotated clinical trial samples can be found [here](llm/data/interim/random_t_annotation_500_42.json).
 
