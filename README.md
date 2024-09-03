@@ -12,15 +12,22 @@ Clinical trials are an essential component of drug development for new cancer tr
 ## Datasets and Evaluation
 
 <details> 
+<summary>Raw Clinical Trials</summary>
+
+1. The clinical trials selected previously to this project from [clinicaltrials.gov](https://clinicaltrials.gov/) can be found [here](llm/data/raw/random_trials.json)
+
+2. The manually annotated clinical trial samples can be found [here](llm/data/interim/random_t_annotation_500_42.json).
+
+3. The reviewed synthetic clinical trial samples can be found [here](llm/data/processed/gpt4_simulated_data.json).
+</details>
+
+
+<details> 
 <summary>Datasets used for DPO Fine-tuning</summary>
 
-1. The manually annotated clinical trial samples can be found [here](llm/data/interim/random_t_annotation_500_42.json).
+1. The training data used for fine-tuning Hermes-FT can be found [here](llm/data/processed/negative.jsonl).
 
-2. The reviewed synthetic clinical trial samples can be found [here](llm/data/processed/gpt4_simulated_data.json).
-
-3. The training data used for fine-tuning Hermes-FT can be found [here](llm/data/processed/negative.jsonl).
-
-4. The training data used for fine-tuning Hermes-synth-FT can be found in [results](llm/data/processed/simulated/negative.jsonl).
+2. The training data used for fine-tuning Hermes-synth-FT can be found in [results](llm/data/processed/simulated/negative.jsonl).
 </details>
 
 <details>
