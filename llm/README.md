@@ -92,8 +92,9 @@ This should save the plot in `figures`
 <br>
 
 > [!NOTE]
-> To repeat the fine-tuning for <b><i>Hermes-FT</i></b>, fine-tuned with the manually annotated dataset only, you should use the training set `data/processed/negative.jsonl`.<br> However, to repeat the fine-tuning for the model <b><i>Hermes-synth-FT</i></b> you should change the `fine_tuned_model` to <i>Hermes-synth-FT</i> and the `fine_tuned_train` to `${data.simulated_dir}/negative.jsonl`
-> If the datasets or models are not found locally, the script will load them from [HuggingFace](https://huggingface.co/nalkhou)
+> - To repeat the fine-tuning for <b><i>Hermes-FT</i></b>, fine-tuned with the manually annotated dataset only, you should use the training set `data/processed/negative.jsonl`.
+<br> However, to repeat the fine-tuning for the model <b><i>Hermes-synth-FT</i></b> you should change the `fine_tuned_model` to <i>Hermes-synth-FT</i> and the `fine_tuned_train` to `${data.simulated_dir}/negative.jsonl`
+> - If the datasets or models are not found locally, the script will load them from [HuggingFace](https://huggingface.co/nalkhou)
 
 After finishing configuring the variables run the command below to start the training:
 
@@ -115,8 +116,9 @@ HERMES_EVAL:
 
 You can choose to evaluate the open source model <i>Hermes-synth-FT</i> or even the base model <i>NousResearch/Hermes-2-Pro-Mistral-7B</i>
 
+
 > [!NOTE]
-> If the datasets or models are not found locally, the script will load them from [HuggingFace](https://huggingface.co/nalkhou)
+> - If the datasets or models are not found locally, the script will load them from [HuggingFace](https://huggingface.co/nalkhou)
 
 </details> 
 
@@ -161,7 +163,7 @@ You can configure which OpenAI model to use for evaluation and specify whether t
 > If the datasets or models are not found locally, the script will load them from [HuggingFace](https://huggingface.co/nalkhou)
 
 > [!IMPORTANT]
-> Ensure you set your `OPENAI_API_KEY` variable. For example, you can do this by running: export `OPENAI_API_KEY="your_api_key"`
+> - Ensure you set your `OPENAI_API_KEY` variable. For example, you can do this by running: export `OPENAI_API_KEY="your_api_key"`
 </details> 
 
 <br>
