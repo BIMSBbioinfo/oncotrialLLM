@@ -179,14 +179,18 @@ PROMPT_FILES:
   gpt_chain_one: prompts/chain_1.json
   gpt_chain_two: prompts/chain_2.json
 ```
+
 <br>
 
 You can configure which OpenAI model to use for evaluation and specify whether to use few-shot learning (with n_shot set to 0, 1 or 2). Select the desired n_shot, and the script will automatically use the corresponding prompt file.
 
-</details> 
+</details>
+
+<br>
 
 > [!IMPORTANT]
 > - Ensure you set your `OPENAI_API_KEY` variable. For example, you can do this by running: export `OPENAI_API_KEY="your_api_key"`
+
 <br>
 
 1. To evaluate the model with zero-shot and few-shot prompting, run the command below:
