@@ -127,4 +127,4 @@ def main(cfg):
         except Exception as e:
             logger.error(f"Failed to simulate data for index {i}: {e}")
 
-        dump_json(simulated_data, os.path.join(cfg.data.raw_dir, "gpt4_simulated_trials.json"))
+        dump_json(simulated_data, os.path.join(cfg.data.simulated_dir, "gpt4_simulated_trials.json"))

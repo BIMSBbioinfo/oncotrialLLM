@@ -45,7 +45,7 @@ def main(cfg):
 
     # Extend training set with synthetic data if provided
     try:
-        syn_data = load_json(f"{cfg.data.processed_dir}/gpt4_simulated_trials.json")
+        syn_data = load_json(f"{cfg.data.simulated_dir}/gpt4_simulated_data.json")
         aug_train_set = training_data.copy()
         aug_train_set.extend(syn_data)  # Extend the training_data list with syn_data
     except Exception as e:
