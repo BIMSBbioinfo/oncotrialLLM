@@ -8,8 +8,19 @@ Make sure to configure the corresponding variables in the [config.yaml](conf/con
 > [!NOTE]
 > If the fine-tuning datasets or fine-tuned models are not found locally, the script will load them from [HuggingFace](https://huggingface.co/nalkhou)
 
+Make sure to navigate to the `llm` directory to run the scripts.
 
 ## Process CIViC Dataset
+<details>
+<summary>Downloding CIVIC Dataset</summary>
+
+To download the [CIViC](https://civicdb.org/welcome) Dataset that has the biomarkers, run the command below:
+
+```
+wget -P data/raw https://civicdb.org/downloads/01-Dec-2023/01-Dec-2023-VariantSummaries.tsv
+```
+</details>
+
 
 <details>
 <summary>CIViC Configuration</summary>
@@ -39,6 +50,17 @@ This should generate three csv files:
 ## Reproduce GENIE analysis
 
 <details>
+
+<summary> Downloding AACR Project GENIE data (15.1-public)</summary>
+
+To download the [AACR Project GENIE data]((https://www.aacr.org/professionals/research/aacr-project-genie/aacr-project-genie-data/)) make sure to first register and follow the steps in [SYNAPSE](https://genie.synapse.org/Access). Make sure to donwload the correct release, <i>15.1-public</i>.
+
+```
+wget -P data/raw https://civicdb.org/downloads/01-Dec-2023/01-Dec-2023-VariantSummaries.tsv
+```
+</details>
+
+<details>
 <summary>AACR GENIE Configuration</summary>
 
 <pre>
@@ -51,7 +73,9 @@ This should generate three csv files:
 </details>
 
 <br>
-1. To process the data and compute the percentage of patients having at least one biomarker found in CIViC run the script below. This should print out the percentage and generate `data/processed/patient_with_biomarkers.csv` containing the list of the matching patients with information about their clinical and mutational profile.  
+1. To process the data and compute the percentage of patients having at least one biomarker found in CIViC run the script below. This should print out the percentage and generate `data/processed/patient_with_biomarkers.csv` containing the list of the matching patients with information about their clinical and mutational profile.  <br>
+
+<b> Make sure you've downloaded and processed the CIViC dataset since the aacr analysis is dependent on its list of biomarkers </b>
 
 ```
 python -m scripts.aacr_analysis.py

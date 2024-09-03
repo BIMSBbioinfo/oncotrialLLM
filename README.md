@@ -31,13 +31,6 @@ Clinical trials are an essential component of drug development for new cancer tr
 2. The evaluation metrics per strategie can be found in [results](llm/data/results/).
 </details>
 
-<details>
-<summary>Clinical Trials, GENIE and CIVIC Datasets</summary>
-
-Civic --> provide the link an how to download it
-Clinical Trials from clinical trials 
-GENIE --> link and how to donwload and where to place
-</details>
 
 ## Repository Structure
 <pre>
