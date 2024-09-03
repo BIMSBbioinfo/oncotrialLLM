@@ -159,13 +159,13 @@ PROMPT_FILES:
 
 You can configure which OpenAI model to use for evaluation and specify whether to use few-shot learning (with n_shot set to 0, 1 or 2). Select the desired n_shot, and the script will automatically use the corresponding prompt file.
 
+</details> 
+
 > [!NOTE]
 > If the datasets or models are not found locally, the script will load them from [HuggingFace](https://huggingface.co/nalkhou)
 
 > [!IMPORTANT]
 > - Ensure you set your `OPENAI_API_KEY` variable. For example, you can do this by running: export `OPENAI_API_KEY="your_api_key"`
-</details> 
-
 <br>
 
 1. To evaluate the model with zero-shot and few-shot prompting, run the command below:
