@@ -18,7 +18,7 @@ Clinical trials are an essential component of drug development for new cancer tr
 
 2. The manually annotated clinical trial samples can be found [here](llm/data/interim/random_t_annotation_500_42.json).
 
-3. The reviewed synthetic clinical trial samples can be found [here](llm/data/processed/gpt4_simulated_data.json).
+3. The reviewed synthetic clinical trial samples can be found [here](llm/data/simulated/gpt4_simulated_data.json).
 </details>
 
 
