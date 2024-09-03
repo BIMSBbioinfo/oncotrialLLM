@@ -14,7 +14,7 @@ from utils.jsons import write_jsonl, to_jsonl, load_json, dump_json
 def main(cfg):
     # Load JSON file
     try:
-        annotated_path = f"{cfg.data.interim_dir}/random_t_annotation_500_42.json"
+        annotated_path = f"{cfg.data.interim_dir}/random_trials_annotated.json"
         annotated = load_json(annotated_path)
     except Exception as e:
         logger.error(f"Error loading annotated JSON file: {e}")

@@ -113,10 +113,10 @@ def main(cfg):
         dump_json(data={
             "size": len(unique_ids), 
             "trials": results},
-                file_path=f"{cfg.data.interim_dir}/random_trials_500_42.json")
+                file_path=f"{cfg.data.raw_dir}/random_trials.json")
         
         dump_json(data={"size": len(biomarkers), "biomarkers": list(biomarkers)},
-                file_path=f"{cfg.data.interim_dir}/biomarkers_list.json")
+                file_path=f"{cfg.data.raw_dir}/biomarkers_list.json")
     except Exception as e:
         logger.error(f"Failed to select raandom trials: {e}")
 
