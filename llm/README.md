@@ -5,6 +5,10 @@
 Make sure to configure the corresponding variables in the [config.yaml](conf/config.yaml) file as required for each section. I will also share the specific variables in the config that can be modified for each script.
 
 
+> [!NOTE]
+> If the fine-tuning datasets or fine-tuned models are not found locally, the script will load them from [HuggingFace](https://huggingface.co/nalkhou)
+
+
 ## Process CIViC Dataset
 
 <details>
@@ -94,7 +98,7 @@ This should save the plot in `figures`
 > [!NOTE]
 > - To repeat the fine-tuning for <b><i>Hermes-FT</i></b>, fine-tuned with the manually annotated dataset only, you should use the training set `data/processed/negative.jsonl`.
 <br> However, to repeat the fine-tuning for the model <b><i>Hermes-synth-FT</i></b> you should change the `fine_tuned_model` to <i>Hermes-synth-FT</i> and the `fine_tuned_train` to `${data.simulated_dir}/negative.jsonl`
-> - If the datasets or models are not found locally, the script will load them from [HuggingFace](https://huggingface.co/nalkhou)
+
 
 After finishing configuring the variables run the command below to start the training:
 
@@ -115,10 +119,6 @@ HERMES_EVAL:
 ```
 
 You can choose to evaluate the open source model <i>Hermes-synth-FT</i> or even the base model <i>NousResearch/Hermes-2-Pro-Mistral-7B</i>
-
-
-> [!NOTE]
-> - If the datasets or models are not found locally, the script will load them from [HuggingFace](https://huggingface.co/nalkhou)
 
 </details> 
 
@@ -160,9 +160,6 @@ PROMPT_FILES:
 You can configure which OpenAI model to use for evaluation and specify whether to use few-shot learning (with n_shot set to 0, 1 or 2). Select the desired n_shot, and the script will automatically use the corresponding prompt file.
 
 </details> 
-
-> [!NOTE]
-> If the datasets or models are not found locally, the script will load them from [HuggingFace](https://huggingface.co/nalkhou)
 
 > [!IMPORTANT]
 > - Ensure you set your `OPENAI_API_KEY` variable. For example, you can do this by running: export `OPENAI_API_KEY="your_api_key"`
