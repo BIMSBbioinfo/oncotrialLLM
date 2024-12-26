@@ -70,13 +70,20 @@ def load_and_process_data(results_dir):
         raise
 
 
-def plot_dataframe(df, score_column, model_order, prompt_order, filename):
+def plot_combined_dataframe(df, score_columns, model_order, prompt_order, filename, figure_title):
     try:
         df["model"] = pd.Categorical(df["model"], categories=model_order, ordered=True)
         df["prompt"] = pd.Categorical(df["prompt"], categories=prompt_order, ordered=True)
         df = df.sort_values(by=["model", "prompt"]).reset_index(drop=True)
 
-        fig, ax = plt.subplots(figsize=(3.54,3), dpi=800)
+        from matplotlib import font_manager
+
+        # Specify the font path directly (if necessary)
+        font_path = '.fonts/arial/ARIAL.TTF'
+        prop = font_manager.FontProperties(fname=font_path)
+
+        fig, axes = plt.subplots(1, len(score_columns), figsize=(7, 3.54), dpi=800, constrained_layout=True)
+
         bar_width = 0.35
         models = df["model"].unique()
         prompts = df["prompt"].unique()
@@ -84,27 +91,46 @@ def plot_dataframe(df, score_column, model_order, prompt_order, filename):
         model_index = {model: i for i, model in enumerate(models)}
         colors = plt.cm.get_cmap('tab20', len(prompts))
 
-        for i, prompt in enumerate(prompts):
-            prompt_data = df[df['prompt'] == prompt]
-            bar_positions = [model_index[model] + (i / n) * bar_width for model in prompt_data['model']]
-            ax.bar(bar_positions, prompt_data[score_column], bar_width / 2, alpha=0.95, label=f'{prompt}', color=colors(i))
+        for ax, score_column, letter in zip(axes, score_columns, ['a.', 'b.']):
+            for i, prompt in enumerate(prompts):
+                prompt_data = df[df['prompt'] == prompt]
+                bar_positions = [model_index[model] + (i / n) * bar_width for model in prompt_data['model']]
+                ax.bar(bar_positions, prompt_data[score_column], bar_width / 2, alpha=0.95, label=f'{prompt}', color=colors(i))
 
-        ax.set_xticks([r + bar_width / 2 for r in range(len(models))])
-        ax.set_xticklabels(['gpt-3.5-turbo', 'gpt-4', 'Hermes-2-Pro-\nMistral-7B',f"Hermes-FT",f'Hermes-FT-synth'])
-        ax.set_xlabel('Models', fontsize=8)
-        ax.set_ylabel('F2 Score', fontsize=8)
+            ax.set_xticks([r + bar_width / 2 for r in range(len(models))])
+            ax.set_xticklabels(['gpt-3.5-turbo', 'gpt-4', 'Hermes-2-Pro-\nMistral-7B', f"Hermes-FT", f'Hermes-FT-synth'], fontsize=8, fontproperties=prop)
+            ax.set_xlabel('Models', fontsize=9, fontproperties=prop)
+            ax.set_ylabel('F2 score', fontsize=9, fontproperties=prop)
+            plt.setp(ax.xaxis.get_majorticklabels(), rotation=-90, ha="left", rotation_mode="anchor")
 
-        # rotates labels and aligns them horizontally to left 
-        plt.setp( ax.xaxis.get_majorticklabels(), rotation=-90, ha="left", rotation_mode="anchor")
-        ax.legend(fontsize=6)
-        plt.xticks(fontsize=7) 
-        plt.yticks(fontsize=7)
+            # Add the letter to the bottom-left corner, further away from the plot
+            ax.text(
+                -0.1,  # X coordinate (slightly outside the plot area)
+                -0.65, # Y coordinate (further below the x-axis)
+                letter, 
+                fontsize=10, 
+                fontweight='bold', 
+                transform=ax.transAxes, 
+                va='center', 
+                ha='center'
+            )
+
+            ax.legend(fontsize=6)
+            
+        #plt.suptitle(figure_title, fontsize=10)
         plt.tight_layout()
 
-        plt.savefig(filename)
+        plt.savefig(f"{filename}.pdf")
+        plt.savefig(f"{filename}.pdf",
+                    format='pdf',
+                    bbox_inches='tight',  # To remove any unnecessary whitespace
+                    dpi=600,               # High resolution for rasterized elements
+                    transparent=True)      # Ensures a clean transparent background if needed
+
     except Exception as e:
-        logger.error(f"Error plotting data: {e}")
+        logger.error(f"Error plotting combined data: {e}")
         raise
+
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg):
@@ -113,22 +139,34 @@ def main(cfg):
 
         model_order = [
             'gpt-3.5-turbo',
-                'gpt-4',
-                'Hermes-2-Pro-Mistral-7B',
-                'Hermes-FT',
-                'Hermes-FT-synth'
-            ]
+            'gpt-4',
+            'Hermes-2-Pro-Mistral-7B',
+            'Hermes-FT',
+            'Hermes-FT-synth'
+        ]
 
         prompt_order = ['0S', 'PC', '1S', '2S']
 
-        score_columns = ['inclusion_f2_score', 'exclusion_f2_score', 'dnf_inclusion_f2_score', 'dnf_exclusion_f2_score']
+        # Generate Figure 1
+        plot_combined_dataframe(
+            df, 
+            score_columns=['inclusion_f2_score', 'exclusion_f2_score'], 
+            model_order=model_order, 
+            prompt_order=prompt_order, 
+            filename=f"{cfg.figures.dir}/Figure1", 
+            figure_title="Figure 1: Inclusion and Exclusion F2 Scores"
+        )
 
-        figures_dir = cfg.figures.dir
-        filenames = [f'{figures_dir}/gpt_plot_models_inclusion.png', f'{figures_dir}/gpt_plot_models_exclusion.png',
-                    f'{figures_dir}/gpt_plot_models_dnf_inclusion.png', f'{figures_dir}/gpt_plot_models_dnf_exclusion.png']
-        
-        for score_column, filename in zip(score_columns, filenames):
-            plot_dataframe(df, score_column, model_order, prompt_order, filename)
+        # Generate Figure 2
+        plot_combined_dataframe(
+            df, 
+            score_columns=['dnf_inclusion_f2_score', 'dnf_exclusion_f2_score'], 
+            model_order=model_order, 
+            prompt_order=prompt_order, 
+            filename=f"{cfg.figures.dir}/Figure2", 
+            figure_title="Figure 2: DNF Inclusion and Exclusion F2 Scores"
+        )
+
     except Exception as e:
         logger.error(f"An error occurred in the main function: {e}")
 

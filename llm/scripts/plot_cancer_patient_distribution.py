@@ -30,16 +30,21 @@ def main(cfg):
         plt.figure(figsize=(3.54,3.54), dpi=600)
         top_percentage.plot(kind='bar', color='C0')
         #plt.title('Top 30 Cancer Types by Number of Patients')
-        plt.xlabel('Cancer Type', fontsize=8)
-        plt.ylabel('Percentage of Patients\nwith a biomarker (%)', fontsize=8)
-        plt.xticks(rotation=90, ha='right', fontsize=7)
-        plt.yticks(fontsize=7)
+        plt.xlabel('Cancer type', fontsize=9)
+        plt.ylabel('Percentage of patients\nwith a biomarker (%)', fontsize=9)
+        plt.xticks(rotation=90, ha='right', fontsize=8)
+        plt.yticks(fontsize=8)
         plt.tight_layout()
 
         figures_dir = cfg.figures.dir
         if not os.path.exists(figures_dir):
             os.makedirs(figures_dir)
         plt.savefig(f'{figures_dir}/aacr_patient_cancer_distribution_perc.png')
+        plt.savefig(f'{figures_dir}/aacr_patient_cancer_distribution_perc.pdf', 
+            format='pdf', 
+            bbox_inches='tight',  # To remove any unnecessary whitespace
+            dpi=600,               # High resolution for rasterized elements
+            transparent=True)      # Ensures a clean transparent background if needed
     except KeyError as e:
         logger.error(f"Error: {e}")
     except Exception as e:
