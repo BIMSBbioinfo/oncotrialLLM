@@ -13,6 +13,7 @@ import re
 import hydra
 import torch
 from loguru import logger
+from datasets import Dataset
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -43,6 +44,7 @@ def main(cfg):
     # Load test set
     try:
         test_dataset = load_jsonl(cfg.HERMES_EVAL.test_set)
+        test_dataset = Dataset.from_list(test_dataset)  # Convert list to Hugging Face Dataset
     except Exception as e:
         logger.error(f"Loading data from HuggingFace: {e}")
         dataset = load_dataset(f'{cfg.HuggingFace}/manual_annotated_data', split=['train', 'validation', 'test'])
